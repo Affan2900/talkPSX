@@ -14,7 +14,7 @@ export default function Footer() {
           className="-mx-5 -my-2 flex flex-wrap justify-center"
           aria-label="Footer"
         >
-          {["About", "Blog", "Jobs", "Press", "Privacy", "Terms"].map((item) => (
+          {["About", "Privacy", "Terms"].map((item) => (
             <div key={item} className="px-5 py-2">
               <Link
                 href="#"
@@ -31,7 +31,7 @@ export default function Footer() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="mt-8 text-center text-base text-green-500"
         >
-          &copy; 2023 Talk PSX, Inc. All rights reserved.
+          &copy; 2025 Talk PSX, Inc. All rights reserved.
         </motion.p>
       </div>
     </footer>
