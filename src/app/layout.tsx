@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
-import { Roboto } from "next/font/google";
+import {
+  ClerkProvider,
+  SignInButton,
+  SignedIn,
+  SignedOut,
+  UserButton
+} from '@clerk/nextjs';
+// import { Roboto } from "next/font/google";
 import "./globals.css";
 
-const roboto = Roboto({
-  variable: "--font-roboto",
-  subsets: ["latin"],
-  weight: ["400", "700"]
-});
+
+// const roboto = Roboto({
+//   variable: "--font-roboto",
+//   subsets: ["latin"],
+//   weight: ["400", "700"]
+// });
 
 
 export const metadata: Metadata = {
@@ -20,12 +28,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    <ClerkProvider afterSignOutUrl={"/"}>
     <html lang="en">
       <body
-        className={`${roboto.variable} antialiased`}
+        className={`antialiased`}
       >
+        <SignedOut>
+            <SignInButton />
+          </SignedOut>
+          <SignedIn>
+            <UserButton />
+          </SignedIn>
         {children}
       </body>
     </html>
+    </ClerkProvider>
   );
 }

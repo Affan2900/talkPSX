@@ -1,11 +1,10 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import AnimatedText from "./AnimatedText"
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import AnimatedText from "./AnimatedText";
 
 const texts = [
   "Real-Time Insights and Trends for PSX Companies",
@@ -14,14 +13,41 @@ const texts = [
 ];
 
 export default function Hero() {
-  const [query, setQuery] = useState("")
+  const [query, setQuery] = useState("");
+  const [answer, setAnswer] = useState(""); // State to store API response
+  const [loading, setLoading] = useState(false); // Loading state
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Handle the query submission here
-    console.log("Query submitted:", query)
-    setQuery("")
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!query.trim()) return; // Prevent empty queries
+
+    setLoading(true);
+    setAnswer(""); // Clear previous answer
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: query }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setAnswer(data.answer); // Store API response
+      } else {
+        setAnswer("Error: " + data.error);
+      }
+    } catch (error) {
+      setAnswer("Failed to fetch response.");
+      console.error("API Error:", error);
+    } finally {
+      setLoading(false);
+    }
+
+    setQuery(""); // Clear input after submitting
+  };
 
   return (
     <div className="flex flex-col justify-center items-center h-[calc(100vh-theme(spacing.24))] py-12 px-4">
@@ -59,16 +85,27 @@ export default function Hero() {
             placeholder="Ask about PSX companies and trends..."
             className="flex-grow px-6 py-6 text-lg md:text-xl text-green-800 focus:outline-none border-none h-24"
           />
-        <Button
+          <Button
             type="submit"
             className="h-full w-48 bg-green-500 hover:bg-green-600 text-white text-lg md:text-xl transition duration-300 ease-in-out rounded-r-2xl"
+            disabled={loading}
           >
-            Ask AI
+            {loading ? "Thinking..." : "Ask AI"}
           </Button>
         </div>
-  
       </motion.form>
-    </div>
-  )
-}
 
+      {/* Display API Response */}
+      {answer && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mt-8 bg-gray-100 p-6 rounded-xl shadow-lg max-w-4xl text-lg text-green-900"
+        >
+          <strong>Answer:</strong> {answer}
+        </motion.div>
+      )}
+    </div>
+  );
+}
