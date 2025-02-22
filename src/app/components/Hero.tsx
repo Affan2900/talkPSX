@@ -5,6 +5,11 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import AnimatedText from "./AnimatedText";
+import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
+import { db } from "@/lib/db";
+import { chats } from "@/app/db/schema";
+import { eq } from "drizzle-orm";
 
 const texts = [
   "Real-Time Insights and Trends for PSX Companies",
