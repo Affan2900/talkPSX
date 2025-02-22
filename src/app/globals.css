@@ -4,7 +4,7 @@
 
 @font-face {
   font-family: 'Roboto';
-  src: url('/roboto.woff2') format('woff2');
+  src: url('/roboto-font.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -126,6 +126,17 @@ body {
 @layer base {
   * {
     @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
