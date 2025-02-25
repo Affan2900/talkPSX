@@ -31,6 +31,8 @@ class OllamaEmbeddings extends Embeddings {
     });
 
     if (!response.ok) {
+      console.error(`Embedding API Error: ${response.status} - ${response.statusText}`);
+      console.error(`Response Body: ${response}`);
       throw new Error(`Failed to fetch embeddings: ${response.statusText}`);
     }
 
