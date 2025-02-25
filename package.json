@@ -23,6 +23,7 @@
     "d3-dsv": "^2.0.0",
     "drizzle-kit": "^0.30.4",
     "drizzle-orm": "^0.39.3",
+    "fs": "^0.0.1-security",
     "langchain": "^0.3.15",
     "lucide-react": "^0.475.0",
     "motion": "^12.4.2",

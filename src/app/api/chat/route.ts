@@ -1,4 +1,6 @@
-import generate from "@/lib/langgraph";
+'use server'
+
+import generate from "@/lib/generate";
 import { NextResponse, NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {

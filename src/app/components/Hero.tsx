@@ -1,15 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import AnimatedText from "./AnimatedText";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { db } from "@/lib/db";
-import { chats } from "@/app/db/schema";
-import { eq } from "drizzle-orm";
 
 const texts = [
   "Real-Time Insights and Trends for PSX Companies",
@@ -18,19 +15,72 @@ const texts = [
 ];
 
 export default function Hero() {
+  const router = useRouter();
+  const { user } = useUser();
   const [query, setQuery] = useState("");
-  const [answer, setAnswer] = useState(""); // State to store API response
-  const [loading, setLoading] = useState(false); // Loading state
+  const [answer, setAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Check if the user exists in the database, create if not
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const checkAndCreateUser = async () => {
+      try {
+        const response = await fetch("/api/user/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.id, username: user.fullName }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          console.error("Error checking/creating user:", data.error);
+        }
+      } catch (error) {
+        console.error("Failed to check/create user:", error);
+      }
+    };
+
+    checkAndCreateUser();
+  }, [user?.id]);
+
+  // console.log("User object:", user);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!query.trim()) return; // Prevent empty queries
+    if (!query.trim()) return;
+
+    if (!user) {
+      setAnswer("Login First");
+      return;
+    }
 
     setLoading(true);
-    setAnswer(""); // Clear previous answer
+    setAnswer("");
 
     try {
+      // Use an API route to create a chat and messages instead of direct DB access
+      const createChatResponse = await fetch("/api/chat/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          userId: user.id,
+          message: query 
+        }),
+      });
+
+      const chatData = await createChatResponse.json();
+      
+      if (!createChatResponse.ok) {
+        throw new Error(chatData.error || "Failed to create chat");
+      }
+
+      const chatId = chatData.chatId;
+
+      // Get the answer from your existing chat API
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -40,7 +90,20 @@ export default function Hero() {
       const data = await response.json();
 
       if (response.ok) {
-        setAnswer(data.answer); // Store API response
+        setAnswer(data.answer);
+
+        // Save the AI response through an API route
+        await fetch("/api/chat/message", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chatId,
+            senderId: null, // null for AI
+            content: data.answer,
+          }),
+        });
+
+        router.push(`/chat/${chatId}`);
       } else {
         setAnswer("Error: " + data.error);
       }
@@ -51,7 +114,7 @@ export default function Hero() {
       setLoading(false);
     }
 
-    setQuery(""); // Clear input after submitting
+    setQuery("");
   };
 
   return (
@@ -100,7 +163,6 @@ export default function Hero() {
         </div>
       </motion.form>
 
-      {/* Display API Response */}
       {answer && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
