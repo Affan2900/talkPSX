@@ -63,7 +63,7 @@ export default function Hero() {
 
     try {
       // Use an API route to create a chat and messages instead of direct DB access
-      const createChatResponse = await fetch("/api/chat/create", {
+      const createChatResponse = await fetch(`/api/user/${user.id}/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

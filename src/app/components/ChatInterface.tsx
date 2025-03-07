@@ -96,27 +96,31 @@ export default function ChatInterface({ initialMessages }: ChatInterfaceProps) {
       </ScrollArea>
 
       {/* Input Area */}
-      <div className="p-6 bg-white border-t border-green-100 shadow-lg">
+      {/* Input Area */}
+      <div className="p-8 bg-gradient-to-r from-green-50 to-white border-t-2 border-green-200 shadow-xl">
         <div className="max-w-5xl mx-auto">
           <form
             onSubmit={(e) => {
               e.preventDefault()
               // Handle sending message
             }}
-            className="flex items-center gap-4"
+            className="flex items-center gap-4 bg-white p-2 rounded-2xl shadow-lg border-2 border-green-300 hover:border-green-400 transition-all duration-300"
           >
-            <Input
-              type="text"
-              placeholder="Ask about PSX companies and trends..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              className="flex-grow text-lg py-6 px-6 border-2 border-green-200 rounded-full focus:ring-green-500 focus:border-green-500 shadow-sm"
-            />
+            <div className="flex-grow relative">
+              <Input
+                type="text"
+                placeholder="Ask about PSX companies and trends..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                className="text-xl py-7 px-8 border-0 focus:ring-0 rounded-xl bg-transparent"
+              />
+              <div className="absolute inset-0 pointer-events-none rounded-xl bg-gradient-to-r from-green-50 to-white opacity-50" />
+            </div>
             <Button
               type="submit"
-              className="bg-green-500 hover:bg-green-600 text-white rounded-full p-6 shadow-md transition-all duration-200 hover:shadow-lg"
+              className="bg-green-500 hover:bg-green-600 text-white rounded-xl p-7 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-105 min-w-[80px] flex items-center justify-center"
             >
-              <Send size={24} className="mr-1" />
+              <Send size={28} />
             </Button>
           </form>
         </div>
