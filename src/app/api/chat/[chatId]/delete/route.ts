@@ -1,4 +1,3 @@
-// app/api/chat/[id]/delete route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/db";
 import { chats } from "@/app/db/schema";
@@ -6,12 +5,11 @@ import { eq } from "drizzle-orm";
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { chatId: string } }
 ) {
   try {
-    const { id } = await params;
-
-    if (!id) {
+    // Check if chatId is missing
+    if (!params.chatId) {
       return NextResponse.json(
         { error: "Chat ID is required" },
         { status: 400 }
@@ -21,7 +19,7 @@ export async function DELETE(
     const db = await getDB();
 
     // Delete the chat with the specified id
-    await db.delete(chats).where(eq(chats.id, id)).execute();
+    await db.delete(chats).where(eq(chats.id, params.chatId)).execute();
 
     return NextResponse.json({ message: "Chat deleted successfully" });
   } catch (error) {

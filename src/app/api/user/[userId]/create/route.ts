@@ -1,4 +1,3 @@
-// app/api/chat/create/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/db";
 import { chats, messages } from "@/app/db/schema";

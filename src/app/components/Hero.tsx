@@ -81,32 +81,15 @@ export default function Hero() {
       const chatId = chatData.chatId;
 
       // Get the answer from your existing chat API
-      const response = await fetch("/api/chat", {
+      const response = await fetch(`/api/chat/${chatId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: query }),
+        body: JSON.stringify({ question: query, chatId }),
       });
 
       const data = await response.json();
-
-      if (response.ok) {
-        setAnswer(data.answer);
-
-        // Save the AI response through an API route
-        await fetch("/api/chat/message", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chatId,
-            senderId: null, // null for AI
-            content: data.answer,
-          }),
-        });
-
-        router.push(`/chat/${chatId}`);
-      } else {
-        setAnswer("Error: " + data.error);
-      }
+      router.push(`/chat/${chatId}`);
+      
     } catch (error) {
       setAnswer("Failed to fetch response.");
       console.error("API Error:", error);
