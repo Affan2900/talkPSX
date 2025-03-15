@@ -18,10 +18,10 @@ export default function ChatItem({ chat }: { chat: Chat }) {
 
   const deleteChat = async (chatId: string) => {
     try {
-      await fetch(`/api/chat/${chatId}`, {
+      await fetch(`/api/chat/${chatId}/delete`, {
         method: "DELETE",
       });
-      setChats(prevChats => prevChats.filter((chat) => chat.id !== id));
+      
     } catch (error) {
       console.error("Failed to delete chat:", error);
     }

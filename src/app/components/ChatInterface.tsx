@@ -14,14 +14,56 @@ interface Message {
 }
 
 interface ChatInterfaceProps {
-  initialMessages: Message[]
+  initialMessages: Message[],
+  chatId: string
 }
 
-export default function ChatInterface({ initialMessages }: ChatInterfaceProps) {
+export default function ChatInterface({ initialMessages, chatId }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!input.trim()) return
+
+    setIsLoading(true)
+    try {
+      // Add the user's message to the chat
+      const userMessage: Message = {
+        id: `${Date.now()}`,
+        content: input,
+        sender: "user",
+      }
+      setMessages((prevMessages) => [...prevMessages, userMessage])
+      setInput("")
+
+    // Get the answer from the chat API
+    const response = await fetch(`/api/chat/${chatId}/message/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: input, chat_history: messages, chatId }),
+    })
+
+    const data = await response.json()
+
+    if (response.ok) {
+      const aiMessage: Message = {
+        id: `${Date.now() + 1}`,
+        content: data.answer,
+        sender: "ai",
+      }
+      setMessages((prevMessages) => [...prevMessages, aiMessage])
+    } else {
+      console.error("Error:", data.error)
+    }
+  } catch (error) {
+    console.error("Failed to fetch response:", error)
+  } finally {
+    setIsLoading(false)
+  }
+  }
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -76,34 +118,62 @@ export default function ChatInterface({ initialMessages }: ChatInterfaceProps) {
 
           {/* Loading Indicator */}
           {isLoading && (
-            <div className="flex items-end space-x-2">
-              <div className="flex-shrink-0 mb-1">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full shadow-md bg-white border-2 border-green-500 mr-3">
-                  <Bot size={24} className="text-green-500" />
-                </div>
-              </div>
-              <div className="flex items-center bg-white p-6 rounded-[2rem] rounded-tl-lg shadow-md border border-green-100">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-                  className="w-6 h-6 border-t-3 border-green-500 border-solid rounded-full"
-                />
-                <span className="ml-3 text-lg text-gray-600">AI is thinking...</span>
-              </div>
-            </div>
-          )}
+  <div className="flex items-end space-x-2">
+    <div className="flex-shrink-0 mb-1">
+      <div className="flex items-center justify-center w-12 h-12 rounded-full shadow-md bg-white border-2 border-green-500 mr-3">
+        <Bot size={24} className="text-green-500" />
+      </div>
+    </div>
+    <div className="flex items-center bg-white p-6 rounded-[2rem] rounded-tl-lg shadow-md border border-green-100">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+        className="w-6 h-6 border-t-3 border-green-500 border-solid rounded-full"
+      />
+      <div className="ml-3 flex items-end">
+        <div className="flex space-x-1">
+          <motion.div
+            className="w-2 h-2 bg-green-500 rounded-full"
+            animate={{ y: [0, -6, 0] }}
+            transition={{ 
+              duration: 0.6, 
+              repeat: Infinity, 
+              ease: "easeInOut" 
+            }}
+          />
+          <motion.div
+            className="w-2 h-2 bg-green-500 rounded-full"
+            animate={{ y: [0, -6, 0] }}
+            transition={{ 
+              duration: 0.6, 
+              repeat: Infinity, 
+              ease: "easeInOut",
+              delay: 0.2
+            }}
+          />
+          <motion.div
+            className="w-2 h-2 bg-green-500 rounded-full"
+            animate={{ y: [0, -6, 0] }}
+            transition={{ 
+              duration: 0.6, 
+              repeat: Infinity, 
+              ease: "easeInOut",
+              delay: 0.4 
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+)}
         </div>
       </ScrollArea>
 
       {/* Input Area */}
-      {/* Input Area */}
       <div className="p-8 bg-gradient-to-r from-green-50 to-white border-t-2 border-green-200 shadow-xl">
         <div className="max-w-5xl mx-auto">
           <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              // Handle sending message
-            }}
+            onSubmit={handleSubmit}
             className="flex items-center gap-4 bg-white p-2 rounded-2xl shadow-lg border-2 border-green-300 hover:border-green-400 transition-all duration-300"
           >
             <div className="flex-grow relative">

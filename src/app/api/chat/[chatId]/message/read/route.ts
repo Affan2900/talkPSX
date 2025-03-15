@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/db";
 import { messages, users } from "@/app/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export async function GET(
   request: NextRequest,
@@ -19,18 +19,19 @@ export async function GET(
 
     // Fetch messages for the given chatId
     const chatMessages = await db
-      .select({
-        id: messages.id,
-        content: messages.content,
-        senderId: messages.senderId,
-        createdAt: messages.createdAt,
-        username: users.username,
-      })
-      .from(messages)
-      .leftJoin(users, eq(messages.senderId, users.id))
-      .where(eq(messages.chatId, chatId))
-      .orderBy(messages.createdAt)
-      .execute();
+  .select({
+    id: messages.id,
+    content: messages.content,
+    senderId: messages.senderId,
+    createdAt: messages.createdAt,
+    username: sql<string>`COALESCE(${users.username}, 'ai')`.as("username"), 
+  })
+  .from(messages)
+  .leftJoin(users, eq(messages.senderId, users.id)) 
+  .where(eq(messages.chatId, chatId))
+  .orderBy(messages.createdAt)
+  .execute();
+
 
     console.log("Chat Messages:", chatMessages);
 

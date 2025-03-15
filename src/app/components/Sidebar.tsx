@@ -42,9 +42,6 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean; to
     fetchChats();
   }, [user]);
 
-  console.log(chats);
-
-  // const toggleSidebar = () => setIsOpen(!isOpen);
 
   const handleNewChat = async () => {
     if (!user) return;
