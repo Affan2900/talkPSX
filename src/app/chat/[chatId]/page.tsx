@@ -23,8 +23,7 @@ export default function ChatPage() {
       try {
         const messagesResponse = await fetch(`/api/chat/${chatId}/messages`);
         const messagesData = await messagesResponse.json();
-        
-        console.log("API Response:", messagesData); // Debugging
+      
     
         // Fix: Access the `messages` array inside the response object
         if (Array.isArray(messagesData.messages)) {
@@ -91,7 +90,9 @@ export default function ChatPage() {
             </motion.p>
           </div>
         ) : (
-          <ChatInterface initialMessages={formattedMessages} />
+          typeof chatId === "string" && (
+            <ChatInterface initialMessages={formattedMessages} chatId={chatId} />
+          )
         )}
       </main>
     </div>

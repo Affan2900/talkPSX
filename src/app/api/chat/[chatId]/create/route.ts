@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   try {
     const { userId, message } = await req.json();
     
-    if (!userId || !message) {
+    if (!userId) {
       return NextResponse.json(
         { error: "User ID and message are required" },
         { status: 400 }
@@ -25,11 +25,14 @@ export async function POST(req: NextRequest) {
     const chatId = newChat[0].id;
 
     // Add the user's message to the chat
-    await db.insert(messages).values({
-      chatId,
-      senderId: userId,
-      content: message,
-    });
+    if(message !== undefined) {
+      await db.insert(messages).values({
+        chatId,
+        senderId: userId,
+        content: message,
+      });
+    }
+
 
     return NextResponse.json({ chatId });
   } catch (error) {

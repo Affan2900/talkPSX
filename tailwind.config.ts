@@ -1,3 +1,4 @@
+import { transform } from "next/dist/build/swc/generated-native";
 import type { Config } from "tailwindcss";
 
 export default {
@@ -55,7 +56,15 @@ export default {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
-  		}
+  		},
+			animation: {
+				"loop-scroll": "loop-scroll 10s linear infinite",
+			},
+			keyframes: {
+				"loop-scroll": {
+					from: { transform: "translateX(0px)" },
+					to: { transform: "translateX(-100%)" }	 }
+				}
   	}
   },
   plugins: [require("tailwindcss-animate")],

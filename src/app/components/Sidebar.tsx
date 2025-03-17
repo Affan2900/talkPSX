@@ -42,26 +42,29 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean; to
     fetchChats();
   }, [user]);
 
-  console.log(chats);
-
-  // const toggleSidebar = () => setIsOpen(!isOpen);
 
   const handleNewChat = async () => {
     if (!user) return;
 
+
     try {
-      const response = await fetch(`/api/chat/create`, {
+      const response = await fetch(`/api/user/${user.id}/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id, title: "New Chat" }),
       });
 
       const newChat = await response.json();
+      console.log("New Chat ID from API: ", newChat);
       setChats(prevChats => [newChat, ...prevChats]);
-      router.push(`/chat/${newChat.id}`);
+      router.push(`/chat/${newChat.chatId}`);
     } catch (error) {
       console.error("Failed to create new chat:", error);
     }
+  };
+
+  const handleDeleteChat = (chatId: string) => {
+    setChats((prevChats) => prevChats.filter((chat) => chat.id !== chatId));
   };
 
 
@@ -87,14 +90,14 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean; to
             </div>
 
             <ScrollArea className="flex-1 px-3">
-              <div className="space-y-2 py-4">
+              <div className="space-y-2 py-4 pl-2">
                 {isLoading ? (
                   <div className="text-center text-white/60">Loading chats...</div>
                 ) : chats.length === 0 ? (
                   <div className="text-center text-white/60">No chats yet</div>
                 ) : (
                   chats.map((chat) => (
-                    <ChatItem key={chat.id} chat={chat} />
+                    <ChatItem key={chat.id} chat={chat} onDeleteChat={handleDeleteChat}/>
                   ))
                 )}
               </div>

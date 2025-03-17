@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import AnimatedText from "./AnimatedText";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import Sidebar from "./Sidebar"; 
 
 const texts = [
   "Real-Time Insights and Trends for PSX Companies",
@@ -20,6 +21,10 @@ export default function Hero() {
   const [query, setQuery] = useState("");
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false); 
+
+  // Toggle sidebar function
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   // Check if the user exists in the database, create if not
   useEffect(() => {
@@ -99,9 +104,17 @@ export default function Hero() {
           body: JSON.stringify({
             chatId,
             senderId: null, // null for AI
-            content: data.answer,
+            content: data.answer
           }),
         });
+
+        await fetch(`/api/chat/${chatId}/update`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: data.title
+          })
+        })    
 
         router.push(`/chat/${chatId}`);
       } else {
@@ -118,61 +131,66 @@ export default function Hero() {
   };
 
   return (
-    <div className="flex flex-col justify-center items-center h-[calc(100vh-theme(spacing.24))] py-12 px-4">
-      <div className="text-center mb-12">
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-6xl md:text-7xl font-bold text-green-800 mb-6"
-        >
-          Talk PSX
-        </motion.h1>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-xl md:text-2xl text-green-700 flex items-center justify-center"
-        >
-          <p className="mr-2 font-bold">Get Real-Time </p>
-          <AnimatedText texts={texts} />
-        </motion.div>
-      </div>
-      <motion.form
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-        onSubmit={handleSubmit}
-        className="w-full max-w-4xl"
-      >
-        <div className="flex flex-col md:flex-row items-center bg-white rounded-2xl shadow-lg overflow-hidden h-24">
-          <Input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ask about PSX companies and trends..."
-            className="flex-grow px-6 py-6 text-lg md:text-xl text-green-800 focus:outline-none border-none h-24"
-          />
-          <Button
-            type="submit"
-            className="h-full w-48 bg-green-500 hover:bg-green-600 text-white text-lg md:text-xl transition duration-300 ease-in-out rounded-r-2xl"
-            disabled={loading}
+    <>
+      {/* Add the Sidebar component */}
+      <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+      
+      <div className={`flex flex-col justify-center items-center h-[calc(100vh-theme(spacing.24))] py-12 px-4 transition-all duration-300 ${sidebarOpen ? 'lg:ml-72' : ''}`}>
+        <div className="text-center mb-12">
+          <motion.h1
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-6xl md:text-7xl font-bold text-green-800 mb-6"
           >
-            {loading ? "Thinking..." : "Ask AI"}
-          </Button>
+            Talk PSX
+          </motion.h1>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-xl md:text-2xl text-green-700 flex items-center justify-center"
+          >
+            <p className="mr-2 font-bold">Get Real-Time </p>
+            <AnimatedText texts={texts} />
+          </motion.div>
         </div>
-      </motion.form>
-
-      {answer && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mt-8 bg-gray-100 p-6 rounded-xl shadow-lg max-w-4xl text-lg text-green-900"
+        <motion.form
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          onSubmit={handleSubmit}
+          className="w-full max-w-4xl"
         >
-          <strong>Answer:</strong> {answer}
-        </motion.div>
-      )}
-    </div>
+          <div className="flex flex-col md:flex-row items-center bg-white rounded-2xl shadow-lg overflow-hidden h-24">
+            <Input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Ask about PSX companies and trends..."
+              className="flex-grow px-6 py-6 text-lg md:text-xl text-green-800 focus:outline-none border-none h-24"
+            />
+            <Button
+              type="submit"
+              className="h-full w-48 bg-green-500 hover:bg-green-600 text-white text-lg md:text-xl transition duration-300 ease-in-out rounded-r-2xl"
+              disabled={loading}
+            >
+              {loading ? "Thinking..." : "Ask AI"}
+            </Button>
+          </div>
+        </motion.form>
+
+        {answer && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mt-8 bg-gray-100 p-6 rounded-xl shadow-lg max-w-4xl text-lg text-green-900"
+          >
+            <strong>Answer:</strong> {answer}
+          </motion.div>
+        )}
+      </div>
+    </>
   );
 }

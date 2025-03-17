@@ -23,11 +23,10 @@ export async function POST(req: NextRequest) {
     };
 
     // Call the generate function, which now returns a simple response
-    const { answer } = await generate(state); // Pass the question as part of the state
+    const { answer, title } = await generate(state); // Pass the question as part of the state
 
-    // Return the response as JSON
-    console.log(answer)
-    return NextResponse.json({ answer });
+
+    return NextResponse.json({ answer, title });
   } catch (error) {
     console.error("API Error:", error);
     return NextResponse.json(

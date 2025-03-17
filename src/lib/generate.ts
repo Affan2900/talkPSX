@@ -33,6 +33,18 @@ const promptTemplate: ChatPromptTemplate = ChatPromptTemplate.fromMessages([
   ],
 ]);
 
+const titlePromptTemplate: ChatPromptTemplate = ChatPromptTemplate.fromMessages([
+  [
+    "human",
+    `Based on the following conversation, generate a concise and descriptive title that summarizes the main topic or question discussed.
+    
+    YOU MUST ALWAYS RETURN A TITLE AND IT SHOULD MUST BE LESS THAN 5 WORDS.
+
+    Conversation: {conversation}
+    Title:`,
+  ],
+]);
+
 const InputStateAnnotation = Annotation.Root({
   question: Annotation<string>,
 });
@@ -49,6 +61,7 @@ const retrieve = async (state: typeof InputStateAnnotation.State) => {
   return { context: retrievedDocs };
 };
 
+
 // Define the generate function
 const generate = async (state: typeof StateAnnotation.State) => {
   const { context } = await retrieve(state);
@@ -63,7 +76,15 @@ const generate = async (state: typeof StateAnnotation.State) => {
   // Use the chatModel to get a single response instead of streaming
   const response = await chatModel.invoke(messages);
 
-  return { answer: response.content };
+  // Generate a title based on the conversation
+  const titleMessages = await titlePromptTemplate.invoke({
+    conversation: `Question: ${state.question}\nAnswer: ${response.content}`,
+  });
+
+  const titleResponse = await chatModel.invoke(titleMessages);
+
+
+  return { answer: response.content, title: titleResponse.content };
 };
 
 export default generate;
