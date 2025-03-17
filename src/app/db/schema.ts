@@ -10,7 +10,8 @@ export const users = pgTable("users", {
 // Chats Table
 export const chats = pgTable("chats", {
   id: uuid("id").primaryKey().defaultRandom(),
-  createdBy: text("created_by").references(() => users.id, { onDelete: "cascade" }), // Use text for Clerk's userId
+  createdBy: text("created_by").references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull().default("New Chat"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

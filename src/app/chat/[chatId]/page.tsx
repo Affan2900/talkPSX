@@ -31,7 +31,8 @@ export default function ChatPage() {
           `/api/chat/${chatId}/message/read`
         );
         const messagesData = await messagesResponse.json();
-
+      
+    
         // Fix: Access the `messages` array inside the response object
         if (Array.isArray(messagesData.messages)) {
           setChatMessages(messagesData.messages);

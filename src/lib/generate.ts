@@ -36,6 +36,30 @@ const promptTemplate = ChatPromptTemplate.fromMessages([
   ["human", "Question: {question}\nContext: {context}\nAnswer:"],
 ]);
 
+const titlePromptTemplate: ChatPromptTemplate = ChatPromptTemplate.fromMessages([
+  [
+    "human",
+    `Based on the following conversation, generate a concise and descriptive title that summarizes the main topic or question discussed.
+    
+    YOU MUST ALWAYS RETURN A TITLE AND IT SHOULD MUST BE LESS THAN 5 WORDS.
+
+    Conversation: {conversation}
+    Title:`,
+  ],
+]);
+
+const titlePromptTemplate: ChatPromptTemplate = ChatPromptTemplate.fromMessages([
+  [
+    "human",
+    `Based on the following conversation, generate a concise and descriptive title that summarizes the main topic or question discussed.
+    
+    YOU MUST ALWAYS RETURN A TITLE AND IT SHOULD MUST BE LESS THAN 5 WORDS.
+
+    Conversation: {conversation}
+    Title:`,
+  ],
+]);
+
 // Define State Annotations
 const StateAnnotation = Annotation.Root({
   question: Annotation<string>(),
@@ -68,6 +92,8 @@ const retrieve = async (state: State) => {
   return { context: retrievedDocs };
 };
 
+
+
 // Generate response with proper memory handling
 const generate = async (state: State) => {
   // Retrieve relevant context
@@ -86,28 +112,18 @@ const generate = async (state: State) => {
     chat_history: chatHistory,
   });
 
-  // Combine with existing messages and keep last 5
-  const allMessages = [...state.messages, ...formattedMessages].slice(-5);
+  // Use the chatModel to get a single response instead of streaming
+  const response = await chatModel.invoke(messages);
 
-  // Generate response
-  const response = await chatModel.invoke(allMessages);
-  
-  // Convert MessageContent to string
-  const responseContent = typeof response.content === "string" 
-    ? response.content
-    : response.content.map(c => "text" in c ? c.text : "").join("\n");
+  // Generate a title based on the conversation
+  const titleMessages = await titlePromptTemplate.invoke({
+    conversation: `Question: ${state.question}\nAnswer: ${response.content}`,
+  });
 
-  // Update state with new messages
-  return {
-    answer: responseContent,
-    messages: [
-      ...allMessages,
-      new AIMessage({
-        content: responseContent,
-        additional_kwargs: response.additional_kwargs,
-      }),
-    ],
-  };
+  const titleResponse = await chatModel.invoke(titleMessages);
+
+
+  return { answer: response.content, title: titleResponse.content };
 };
 
 export default generate;
