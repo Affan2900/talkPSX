@@ -33,7 +33,7 @@ export async function GET(
   .execute();
 
 
-    console.log("Chat Messages:", chatMessages);
+    // console.log("Chat Messages:", chatMessages);
 
     return NextResponse.json({ messages: chatMessages }, { status: 200 });
   } catch (error) {

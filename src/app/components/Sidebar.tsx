@@ -28,6 +28,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean; to
           setIsLoading(true);
           const response = await fetch(`/api/user/${user.id}/chats`);
           const data = await response.json();
+          console.log("Chats: ", data);
           // Ensure data.chats is an array, default to empty array if undefined
           setChats(Array.isArray(data.chats) ? data.chats : []);
         } catch (error) {
@@ -56,8 +57,17 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean; to
 
       const newChat = await response.json();
       console.log("New Chat ID from API: ", newChat);
-      setChats(prevChats => [newChat, ...prevChats]);
-      router.push(`/chat/${newChat.chatId}`);
+      // Make sure chatId exists before updating state
+      if (newChat?.chatId) {
+      setChats(prevChats => [
+        {
+          id: newChat.chatId,
+          title: newChat.title || "New Chat"
+        },
+          ...prevChats,
+        ])
+        router.push(`/chat/${newChat.chatId}`);
+      };
     } catch (error) {
       console.error("Failed to create new chat:", error);
     }

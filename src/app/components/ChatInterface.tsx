@@ -51,7 +51,7 @@ export default function ChatInterface({ initialMessages, chatId }: ChatInterface
     if (response.ok) {
       const aiMessage: Message = {
         id: `${Date.now() + 1}`,
-        content: data.answer,
+        content: data.answer.replace(/^"|"$/g, ""),
         sender: "ai",
       }
       setMessages((prevMessages) => [...prevMessages, aiMessage])
@@ -71,38 +71,38 @@ export default function ChatInterface({ initialMessages, chatId }: ChatInterface
     }
   }, [messages])
 
-  const hanldeSubmit = async (e: React.FormEvent) => {
-    setIsLoading(true);
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: input }),
-    });
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   setIsLoading(true);
+  //   const response = await fetch("/api/chat", {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ question: input }),
+  //   });
 
-    const data = await response.json();
+  //   const data = await response.json();
 
-    if (response.ok) {
-      // Save the AI response through an API route
-      const messageResponse = await fetch("/api/chat/message", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chatId,
-          senderId: null, // null for AI
-          content: data.answer,
-          title: data.title,
-        }),
-      });
+  //   if (response.ok) {
+  //     // Save the AI response through an API route
+  //     const messageResponse = await fetch("/api/chat/message", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         chatId,
+  //         senderId: null, // null for AI
+  //         content: data.answer,
+  //         title: data.title,
+  //       }),
+  //     });
     
-      // Parse the JSON body to get the messageId
-      const messageData = await messageResponse.json();
-      const messageId = messageData.messageId;
+  //     // Parse the JSON body to get the messageId
+  //     const messageData = await messageResponse.json();
+  //     const messageId = messageData.messageId;
     
-      // Update the messages state
-      setMessages([...messages, { id: messageId, content: data.answer, sender: "ai" }]);
-      setInput("");
-    }
-  }
+  //     // Update the messages state
+  //     setMessages([...messages, { id: messageId, content: data.answer, sender: "ai" }]);
+  //     setInput("");
+  //   }
+  // }
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-green-50 to-white">
@@ -207,8 +207,8 @@ export default function ChatInterface({ initialMessages, chatId }: ChatInterface
         <div className="max-w-5xl mx-auto">
           <form
             onSubmit={(e) => {
-              e.preventDefault()
-              // Handle sending message
+              e.preventDefault();
+              handleSubmit(e);
             }}
             className="flex items-center gap-4 bg-white p-2 rounded-2xl shadow-lg border-2 border-green-300 hover:border-green-400 transition-all duration-300"
           >

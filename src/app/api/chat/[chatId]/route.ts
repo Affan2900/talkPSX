@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     };
 
     // Process the question through the AI pipeline
-    const { answer, messages: updatedMessages } = await generate(initialState);
+    const { answer, title, messages: updatedMessages } = await generate(initialState);
 
     // Convert messages back to client-safe format
     const formattedMessages = updatedMessages.map(msg => ({
@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ 
       answer,
+      title,
       messages: formattedMessages,
       savedMessage: newMessage
     });

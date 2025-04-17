@@ -79,11 +79,13 @@ export default function Hero() {
 
       const chatData = await createChatResponse.json();
       
+      
       if (!createChatResponse.ok) {
         throw new Error(chatData.error || "Failed to create chat");
       }
 
       const chatId = chatData.chatId;
+      
 
       // Get the answer from your existing chat API
       const response = await fetch(`/api/chat/${chatId}`, {
@@ -95,18 +97,19 @@ export default function Hero() {
       const data = await response.json();
 
       if (response.ok) {
-        setAnswer(data.answer);
+        setAnswer(data.answer.replace(/^"|"$/g, ""));
 
-        // Save the AI response through an API route
-        await fetch("/api/chat/message", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chatId,
-            senderId: null, // null for AI
-            content: data.answer
-          }),
-        });
+        // // Save the AI response through an API route
+        // await fetch("/api/chat/message", {
+        //   method: "POST",
+        //   headers: { "Content-Type": "application/json" },
+        //   body: JSON.stringify({
+        //     chatId,
+        //     senderId: null, // null for AI
+        //     content: data.answer
+        //   }),
+        // });
+
 
         await fetch(`/api/chat/${chatId}/update`, {
           method: "PUT",
