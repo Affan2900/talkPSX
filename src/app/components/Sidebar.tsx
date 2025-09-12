@@ -85,7 +85,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean; to
         animate={{ width: isOpen ? 300 : 0 }}
         transition={{ duration: 0.3 }}
         className={cn(
-          "fixed left-0 top-0 bottom-0 z-40 bg-gradient-to-b from-green-500 to-green-600",
+          "fixed left-0 top-0 bottom-0 z-40 bg-gradient-to-b from-green-400 to-green-500",
           "border-r border-white/10 backdrop-blur-sm",
           isOpen ? "shadow-xl" : ""
         )}
@@ -93,8 +93,8 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean; to
         {isOpen && (
           <div className="flex flex-col h-full text-white">
             <div className="p-4 border-b border-white/10">
-              <Button onClick={handleNewChat} className="w-full bg-white/10 hover:bg-white/20 text-white border-0">
-                <PlusCircle className="mr-2 h-5 w-5" />
+              <Button onClick={handleNewChat} className="w-full text-lg bg-white/10 hover:bg-white/20 text-white border-0">
+                <PlusCircle className="mr-1" style={{width: '20px', height: '20px'}} />
                 New Chat
               </Button>
             </div>

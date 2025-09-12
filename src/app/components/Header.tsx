@@ -16,7 +16,7 @@ export default function Header() {
       transition={{ duration: 0.5 }}
       className="bg-transparent"
     >
-      <nav className="container mx-auto px-6">
+      <nav className="container mx-auto px-6 -mt-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Added Login component here */}
@@ -26,16 +26,16 @@ export default function Header() {
           </div>
           
           <div className="hidden md:flex items-center space-x-8 font-bold">
-            <Link href="#" className="text-green-700 hover:text-white text-2xl">
+            <Link href="#" className="text-green-900 hover:text-white text-2xl">
               Home
             </Link>
-            <Link href="#" className="text-green-700 hover:text-white text-2xl">
+            <Link href="#" className="text-green-900 hover:text-white text-2xl">
               About
             </Link>
-            <Link href="#" className="text-green-700 hover:text-white text-2xl">
+            <Link href="#" className="text-green-900 hover:text-white text-2xl">
               Services
             </Link>
-            <Link href="#" className="text-green-700 hover:text-white text-2xl">
+            <Link href="#" className="text-green-900 hover:text-white text-2xl">
               Contact
             </Link>
           </div>

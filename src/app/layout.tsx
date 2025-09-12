@@ -37,7 +37,9 @@ export default function RootLayout({
             <SignInButton />
           </SignedOut>
           <SignedIn>
-            <UserButton />
+            <div className="absolute top-4 right-4">
+    <UserButton />
+  </div>
           </SignedIn>
         {children}
       </body>

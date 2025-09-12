@@ -4,7 +4,7 @@ import generate from "@/lib/generate";
 import { NextResponse, NextRequest } from "next/server";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { getDB } from "@/lib/db";
-import { messages } from "@/app/db/schema";
+import { messages, users } from "@/app/db/schema";
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,6 +19,9 @@ export async function POST(req: NextRequest) {
     }
 
     const db = await getDB();
+    await db.insert(users)
+      .values({ id: "ai", username: "AI Assistant" })
+      .onConflictDoNothing();
 
     // Convert chat history to BaseMessage format
     const previousMessages = chat_history.map((msg: any) => {

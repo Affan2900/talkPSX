@@ -8,10 +8,12 @@ import AnimatedText from "./AnimatedText";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import Sidebar from "./Sidebar"; 
+import { ArrowUpRight } from "lucide-react";
+import { LoaderCircle } from "@/components/animate-ui/icons/loader-circle";
 
 const texts = [
-  "Real-Time Insights and Trends for PSX Companies",
-  "Discover the Current Best Performing PSX Companies",
+  "Insights and Trends for PSX Companies",
+  "Best Performing PSX Companies",
   "In-Depth Analysis and Predictions for PSX Stocks"
 ];
 
@@ -23,7 +25,7 @@ export default function Hero() {
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false); 
 
-  // Toggle sidebar function
+  // Toggle sidebar functionP
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   // Check if the user exists in the database, create if not
@@ -165,20 +167,25 @@ export default function Hero() {
           onSubmit={handleSubmit}
           className="w-full max-w-4xl"
         >
-          <div className="flex flex-col md:flex-row items-center bg-white rounded-2xl shadow-lg overflow-hidden h-24">
+          <div className="flex flex-col md:flex-row items-center bg-white rounded-full shadow-lg overflow-hidden h-16">
             <Input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Ask about PSX companies and trends..."
-              className="flex-grow px-6 py-6 text-lg md:text-xl text-green-800 focus:outline-none border-none h-24"
+              className="flex-grow px-6 py-6 text-lg md:text-xl text-zinc-800 h-14 w-3/4 rounded-fulll"
+              style={{
+    border: 'none',
+    outline: 'none',
+    boxShadow: 'none'
+  }}
             />
             <Button
               type="submit"
-              className="h-full w-48 bg-green-500 hover:bg-green-600 text-white text-lg md:text-xl transition duration-300 ease-in-out rounded-r-2xl"
+              className="h-full w-24 bg-green-500 hover:bg-green-600 text-white text-lg md:text-xl transition duration-300 ease-in-out rounded-full"
               disabled={loading}
             >
-              {loading ? "Thinking..." : "Ask AI"}
+              {loading ? <LoaderCircle animateOnHover /> :<ArrowUpRight style={{width: '50px', height: '50px'}} />}
             </Button>
           </div>
         </motion.form>

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Send, Bot, User } from "lucide-react"
+import { ArrowUpRight, Bot, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -203,30 +203,34 @@ export default function ChatInterface({ initialMessages, chatId }: ChatInterface
       </ScrollArea>
 
       {/* Input Area */}
-      <div className="p-8 bg-gradient-to-r from-green-50 to-white border-t-2 border-green-200 shadow-xl">
+      <div className="p-2 bg-gradient-to-r from-green-50 to-white border-t-2 border-green-200 shadow-xl">
         <div className="max-w-5xl mx-auto">
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleSubmit(e);
             }}
-            className="flex items-center gap-4 bg-white p-2 rounded-2xl shadow-lg border-2 border-green-300 hover:border-green-400 transition-all duration-300"
+            className="flex items-center gap-4 bg-white  rounded-full shadow-lg border-2 border-green-300 hover:border-green-400 transition-all duration-300"
           >
             <div className="flex-grow relative">
               <Input
                 type="text"
-                placeholder="Ask about PSX companies and trends..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                className="text-xl py-7 px-8 border-0 focus:ring-0 rounded-xl bg-transparent"
+                className="text-2xl py-4 px-5  rounded-full bg-transparent"
+                style={{
+    border: 'none',
+    outline: 'none',
+    boxShadow: 'none'
+  }}
               />
               <div className="absolute inset-0 pointer-events-none rounded-xl bg-gradient-to-r from-green-50 to-white opacity-50" />
             </div>
             <Button
               type="submit"
-              className="bg-green-500 hover:bg-green-600 text-white rounded-xl p-7 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-105 min-w-[80px] flex items-center justify-center"
+              className="bg-green-500 hover:bg-green-600 text-white  p-7 shadow-md transition-all duration-200 hover:shadow-lg hover:scale-105 min-w-[80px] flex items-center justify-center rounded-full"
             >
-              <Send size={28} />
+              <ArrowUpRight style={{width: '30px', height: '30px'}} />
             </Button>
           </form>
         </div>

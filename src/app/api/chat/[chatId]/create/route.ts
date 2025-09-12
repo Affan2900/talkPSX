@@ -1,9 +1,11 @@
 // app/api/chat/create/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/db";
-import { chats, messages } from "@/app/db/schema";
+import { chats, messages, users } from "@/app/db/schema";
+import { useRouter } from "next/navigation";
 
 export async function POST(req: NextRequest) {
+  const router = useRouter();
   try {
     const { userId, message } = await req.json();
     
@@ -15,6 +17,9 @@ export async function POST(req: NextRequest) {
     }
 
     const db = await getDB();
+    await db.insert(users)
+  .values({ id: "ai", username: "AI Assistant" })
+  .onConflictDoNothing();
     
     // Create a new chat
     const newChat = await db
@@ -23,6 +28,9 @@ export async function POST(req: NextRequest) {
       .returning({ id: chats.id });
 
     const chatId = newChat[0].id;
+
+    router.push(`/chat/${chatId}`);
+
 
     // Add the user's message to the chat
     if(message !== undefined) {

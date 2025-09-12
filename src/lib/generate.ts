@@ -3,27 +3,31 @@ import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { Document } from "@langchain/core/documents";
 import { Annotation } from "@langchain/langgraph";
-import { HumanMessage, AIMessage, BaseMessage } from "@langchain/core/messages";
+import {  BaseMessage , AIMessage, HumanMessage, MessageContent} from "@langchain/core/messages";
 import OllamaEmbeddings from "@/lib/ollamaEmbedding";
+import * as dotenv from "dotenv";
+
+// Load environment variables from .env file
+dotenv.config({ path: ".env.local" })
 
 // PostgreSQL configuration
 const PG_DB_CONFIG = {
   postgresConnectionOptions: {
-    connectionString: process.env.DATABASE_URL || "",
+    connectionString: process.env.DATABASE_URL ,
   },
   tableName: "Dividend_Stock_Scores",
 };
 
 // Initialize PGVectorStore
 const vectorStore = await PGVectorStore.initialize(
-  new OllamaEmbeddings("llama3.2:1b", "http://localhost:11434"),
+  new OllamaEmbeddings("qwen3:1.7b", "http://localhost:11434"),
   PG_DB_CONFIG
 );
 
 // Initialize Chat Model
 const chatModel = new ChatOllama({
   baseUrl: "http://localhost:11434",
-  model: "llama3.2:1b",
+  model: "qwen3:1.7b",
 });
 
 // Define the prompt template
@@ -113,11 +117,33 @@ const generate = async (state: State) => {
 
   const titleResponse = await chatModel.invoke(titleMessages);
 
-  // console.log("Answer: ", typeof(response.content) );
+  // Type guard for text messages
+function isTextContent(
+  c: MessageContent | any
+): c is { type: "text"; text: string } {
+  return c.type === "text" && typeof c.text === "string";
+}
+  // Normalize response.content to a string
+let rawText = "";
 
+// Handle different types of response.content
+if (typeof response.content === "string") {
+  rawText = response.content;
+} else if (Array.isArray(response.content)) {
+  rawText = response.content
+    .filter(isTextContent)
+    .map(c => c.text)
+    .join("\n");
+}
 
-  console.log(typeof(titleResponse.content) );
-  return { answer: JSON.stringify(response.content), title: titleResponse.content, messages: state.messages };
+// Now safe to use .replace
+let cleaned = rawText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+
+return {
+  answer: cleaned,
+  title: titleResponse.content,
+  messages: state.messages
+};
 };
 
 export default generate;
