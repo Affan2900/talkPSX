@@ -2,10 +2,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/db";
 import { chats, messages, users } from "@/app/db/schema";
-import { useRouter } from "next/navigation";
 
 export async function POST(req: NextRequest) {
-  const router = useRouter();
+  
   try {
     const { userId, message } = await req.json();
     
@@ -29,7 +28,7 @@ export async function POST(req: NextRequest) {
 
     const chatId = newChat[0].id;
 
-    router.push(`/chat/${chatId}`);
+
 
 
     // Add the user's message to the chat

@@ -20,14 +20,14 @@ const PG_DB_CONFIG = {
 
 // Initialize PGVectorStore
 const vectorStore = await PGVectorStore.initialize(
-  new OllamaEmbeddings("qwen3:1.7b", "http://localhost:11434"),
+  new OllamaEmbeddings("deepseek-r1:1.5b", "http://localhost:11434"),
   PG_DB_CONFIG
 );
 
 // Initialize Chat Model
 const chatModel = new ChatOllama({
   baseUrl: "http://localhost:11434",
-  model: "qwen3:1.7b",
+  model: "deepseek-r1:1.5b",
 });
 
 // Define the prompt template

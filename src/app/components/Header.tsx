@@ -25,17 +25,17 @@ export default function Header() {
             <Image src="/logo.png" alt="Talk PSX Logo" width={200} height={200} />
           </div>
           
-          <div className="hidden md:flex items-center space-x-8 font-bold">
-            <Link href="#" className="text-green-900 hover:text-white text-2xl">
+          <div className=" md:flex items-center space-x-8">
+            <Link href="#" className="text-green-900 hover:text-white text-2xl font-semibold">
               Home
             </Link>
-            <Link href="#" className="text-green-900 hover:text-white text-2xl">
+            <Link href="#" className="text-green-900 hover:text-white text-2xl font-semibold">
               About
             </Link>
-            <Link href="#" className="text-green-900 hover:text-white text-2xl">
+            <Link href="#" className="text-green-900 hover:text-white text-2xl font-semibold">
               Services
             </Link>
-            <Link href="#" className="text-green-900 hover:text-white text-2xl">
+            <Link href="#" className="text-green-900 hover:text-white text-2xl font-semibold">
               Contact
             </Link>
           </div>

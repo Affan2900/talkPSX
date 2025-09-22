@@ -1,0 +1,14 @@
+[project]
+name = "evaluation"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "langchain-ollama>=0.3.8",
+    "pandas>=2.3.2",
+    "pypdf>=6.0.0",
+    "ragas[metrics]>=0.3.5",
+    "rapidfuzz>=3.14.1",
+    "sentence-transformers>=5.1.0",
+]

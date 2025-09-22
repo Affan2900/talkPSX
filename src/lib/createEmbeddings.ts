@@ -15,7 +15,7 @@ const PG_DB_CONFIG = {
 };
 
 // Initialize embedding model
-const embeddings = new OllamaEmbeddings("llama3.2:1b", "http://localhost:11434");
+const embeddings = new OllamaEmbeddings("deepseek-r1:1.5b", "http://localhost:11434");
 
 async function loadCSV() {
   const filePath = path.join(process.cwd(), 'src/documents/Updated_Dividend_Stock_Scores.csv');
