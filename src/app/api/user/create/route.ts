@@ -7,7 +7,10 @@ export async function POST(req: NextRequest) {
   try {
     const { userId, username } = await req.json();
 
-    if (!userId || !username) {
+    const usernameStr =
+      typeof username === "string" ? username.trim() : String(username ?? "").trim();
+
+    if (!userId || !usernameStr) {
       return NextResponse.json(
         { error: "User ID and username are required" },
         { status: 400 }
@@ -24,14 +27,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Create a new user
-    await db.insert(users).values({ id: userId, username });
+    await db.insert(users).values({ id: userId, username: usernameStr });
 
     return NextResponse.json({ message: "User created" }, { status: 201 });
   } catch (error) {
     console.error("Error checking/creating user:", error);
-    return NextResponse.json(
-      { error: "Failed to check or create user" },
-      { status: 500 }
-    );
+    const cause =
+      error instanceof Error ? error.message : typeof error === "object" && error !== null && "message" in error
+        ? String((error as { message: unknown }).message)
+        : String(error);
+    const payload =
+      process.env.NODE_ENV === "development"
+        ? { error: "Failed to check or create user", cause }
+        : { error: "Failed to check or create user" };
+    return NextResponse.json(payload, { status: 500 });
   }
 }

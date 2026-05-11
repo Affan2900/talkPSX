@@ -5,29 +5,35 @@ import { Document } from "@langchain/core/documents";
 import { Annotation } from "@langchain/langgraph";
 import {  BaseMessage , AIMessage, HumanMessage, MessageContent} from "@langchain/core/messages";
 import OllamaEmbeddings from "@/lib/ollamaEmbedding";
+import { databaseUrlToPgConfig } from "@/lib/databaseUrlToPgConfig";
+import {
+  resolveOllamaBaseUrl,
+  resolveOllamaChatModel,
+  resolveOllamaEmbeddingModel,
+} from "@/lib/ollamaEnv";
 import * as dotenv from "dotenv";
 
 // Load environment variables from .env file
 dotenv.config({ path: ".env.local" })
 
-// PostgreSQL configuration
+const ollamaBaseUrl = resolveOllamaBaseUrl();
+
+// PostgreSQL configuration (explicit fields for `pg`; see databaseUrlToPgConfig)
 const PG_DB_CONFIG = {
-  postgresConnectionOptions: {
-    connectionString: process.env.DATABASE_URL ,
-  },
+  postgresConnectionOptions: databaseUrlToPgConfig(),
   tableName: "Dividend_Stock_Scores",
 };
 
-// Initialize PGVectorStore
+// Vector search uses OLLAMA_EMBEDDING_MODEL (default nomic-embed-text:latest); must match createEmbeddings.
 const vectorStore = await PGVectorStore.initialize(
-  new OllamaEmbeddings("deepseek-r1:1.5b", "http://localhost:11434"),
+  new OllamaEmbeddings(resolveOllamaEmbeddingModel(), ollamaBaseUrl),
   PG_DB_CONFIG
 );
 
-// Initialize Chat Model
+// Main LLM: OLLAMA_CHAT_MODEL or OLLAMA_MODEL (default deepseek-r1:1.5b)
 const chatModel = new ChatOllama({
-  baseUrl: "http://localhost:11434",
-  model: "deepseek-r1:1.5b",
+  baseUrl: ollamaBaseUrl,
+  model: resolveOllamaChatModel(),
 });
 
 // Define the prompt template

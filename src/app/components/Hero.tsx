@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import Sidebar from "./Sidebar"; 
 import { ArrowUpRight } from "lucide-react";
-import { LoaderCircle } from "@/components/animate-ui/icons/loader-circle";
+import { Spinner } from "@/components/ui/spinner"
 
 const texts = [
   "Insights and Trends for PSX Companies",
@@ -34,16 +34,27 @@ export default function Hero() {
 
     const checkAndCreateUser = async () => {
       try {
+        const username =
+          user.fullName?.trim() ||
+          [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
+          user.username ||
+          user.primaryEmailAddress?.emailAddress ||
+          `user_${user.id.slice(0, 12)}`;
+
         const response = await fetch("/api/user/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: user.id, username: user.fullName }),
+          body: JSON.stringify({ userId: user.id, username }),
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          console.error("Error checking/creating user:", data.error);
+          console.error(
+            "Error checking/creating user:",
+            data.error,
+            "cause" in data ? data.cause : ""
+          );
         }
       } catch (error) {
         console.error("Failed to check/create user:", error);
@@ -185,7 +196,7 @@ export default function Hero() {
               className="h-full w-24 bg-green-500 hover:bg-green-600 text-white text-lg md:text-xl transition duration-300 ease-in-out rounded-full"
               disabled={loading}
             >
-              {loading ? <LoaderCircle animateOnHover /> :<ArrowUpRight style={{width: '50px', height: '50px'}} />}
+              {loading ? <Spinner /> :<ArrowUpRight style={{width: '50px', height: '50px'}} />}
             </Button>
           </div>
         </motion.form>

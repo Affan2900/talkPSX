@@ -43,3 +43,6 @@ next-env.d.ts
 
 # documents folder
 /src/documents/
+
+# local DB dumps (large; may contain sensitive data)
+*.backup

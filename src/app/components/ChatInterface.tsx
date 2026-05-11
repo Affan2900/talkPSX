@@ -25,25 +25,34 @@ export default function ChatInterface({ initialMessages, chatId }: ChatInterface
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim()) return
+  e.preventDefault()
+  if (!input.trim()) return
 
-    setIsLoading(true)
-    try {
-      // Add the user's message to the chat
-      const userMessage: Message = {
-        id: `${Date.now()}`,
-        content: input,
-        sender: "user",
-      }
-      setMessages((prevMessages) => [...prevMessages, userMessage])
-      setInput("")
+  setIsLoading(true)
 
-    // Get the answer from the chat API
+  const userMessage: Message = {
+    id: `${Date.now()}`,
+    content: input,
+    sender: "user",
+  }
+
+  // Prepare the updated list of messages first
+  const updatedMessages = [...messages, userMessage]
+
+  // Update UI immediately
+  setMessages(updatedMessages)
+  setInput("")
+
+  try {
+    // Use the updated array for your API call
     const response = await fetch(`/api/chat/${chatId}/message/create`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: input, chat_history: messages, chatId }),
+      body: JSON.stringify({
+        question: input,
+        chat_history: updatedMessages,
+        chatId,
+      }),
     })
 
     const data = await response.json()
@@ -54,7 +63,7 @@ export default function ChatInterface({ initialMessages, chatId }: ChatInterface
         content: data.answer.replace(/^"|"$/g, ""),
         sender: "ai",
       }
-      setMessages((prevMessages) => [...prevMessages, aiMessage])
+      setMessages((prev) => [...prev, aiMessage])
     } else {
       console.error("Error:", data.error)
     }
@@ -63,7 +72,8 @@ export default function ChatInterface({ initialMessages, chatId }: ChatInterface
   } finally {
     setIsLoading(false)
   }
-  }
+}
+
 
   useEffect(() => {
     if (scrollAreaRef.current) {
