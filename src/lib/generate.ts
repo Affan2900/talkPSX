@@ -14,25 +14,30 @@ import {
 import * as dotenv from "dotenv";
 
 // Load environment variables from .env file
-dotenv.config({ path: ".env.local" })
+dotenv.config({ path: ".env.local" });
 
-const ollamaBaseUrl = resolveOllamaBaseUrl();
+/** Lazy-init: avoids DB + Ollama during import (fixes Vercel `next build` / cold analysis). */
+let vectorStorePromise: ReturnType<typeof PGVectorStore.initialize> | null = null;
 
-// PostgreSQL configuration (explicit fields for `pg`; see databaseUrlToPgConfig)
-const PG_DB_CONFIG = {
-  postgresConnectionOptions: databaseUrlToPgConfig(),
-  tableName: "Dividend_Stock_Scores",
-};
-
-// Vector search uses OLLAMA_EMBEDDING_MODEL (default nomic-embed-text:latest); must match createEmbeddings.
-const vectorStore = await PGVectorStore.initialize(
-  new OllamaEmbeddings(resolveOllamaEmbeddingModel(), ollamaBaseUrl),
-  PG_DB_CONFIG
-);
+function getVectorStore() {
+  if (!vectorStorePromise) {
+    vectorStorePromise = PGVectorStore.initialize(
+      new OllamaEmbeddings(
+        resolveOllamaEmbeddingModel(),
+        resolveOllamaBaseUrl()
+      ),
+      {
+        postgresConnectionOptions: databaseUrlToPgConfig(),
+        tableName: "Dividend_Stock_Scores",
+      }
+    );
+  }
+  return vectorStorePromise;
+}
 
 // Main LLM: OLLAMA_CHAT_MODEL or OLLAMA_MODEL (default deepseek-r1:1.5b)
 const chatModel = new ChatOllama({
-  baseUrl: ollamaBaseUrl,
+  baseUrl: resolveOllamaBaseUrl(),
   model: resolveOllamaChatModel(),
 });
 
@@ -87,6 +92,7 @@ type State = typeof StateAnnotation.State;
 
 // Retrieve context from vector store
 const retrieve = async (state: State) => {
+  const vectorStore = await getVectorStore();
   const retrievedDocs = await vectorStore.similaritySearch(state.question);
   return { context: retrievedDocs };
 };
