@@ -6,7 +6,7 @@ import { auth } from "@clerk/nextjs/server";
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { chatId: string } }
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
   try {
     const { userId } = await auth();

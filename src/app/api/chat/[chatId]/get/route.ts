@@ -5,9 +5,10 @@ import { eq } from "drizzle-orm";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { chatId: string } }
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
-  if (!params.chatId) {
+  const { chatId } = await params;
+  if (!chatId) {
     return NextResponse.json({ error: "Chat ID is required" }, { status: 400 });
   }
 
@@ -15,12 +16,12 @@ export async function GET(
     const db = await getDB();
 
     // Log the chatId being queried
-    console.log("Fetching messages for chatId:", params.chatId);
+    console.log("Fetching messages for chatId:", chatId);
 
     const chatMessages = await db
       .select()
       .from(messages)
-      .where(eq(messages.chatId, params.chatId))
+      .where(eq(messages.chatId, chatId))
       .execute();
 
     // Log the query result

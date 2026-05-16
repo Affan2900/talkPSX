@@ -35,7 +35,7 @@ export default function AnimatedText({ texts }: AnimatedTextProps) {
     });
 
     return controls.stop;
-  }, [currentTextIndex, isDeleting, texts]);
+  }, [currentTextIndex, isDeleting, texts, count]);
 
   return (
     <p className={animationCompleted ? "animation-completed" : ""}>

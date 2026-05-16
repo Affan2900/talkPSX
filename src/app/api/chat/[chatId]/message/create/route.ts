@@ -6,6 +6,8 @@ import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { getDB } from "@/lib/db";
 import { messages, users } from "@/app/db/schema";
 
+type ClientChatTurn = { role: string; content: unknown };
+
 export async function POST(req: NextRequest) {
   try {
     const { question, chat_history = [], chatId } = await req.json();
@@ -23,11 +25,16 @@ export async function POST(req: NextRequest) {
       .values({ id: "ai", username: "AI Assistant" })
       .onConflictDoNothing();
 
+    const history: ClientChatTurn[] = Array.isArray(chat_history)
+      ? (chat_history as ClientChatTurn[])
+      : [];
+
     // Convert chat history to BaseMessage format
-    const previousMessages = chat_history.map((msg: any) => {
-      return msg.role === "user" 
-        ? new HumanMessage(msg.content)
-        : new AIMessage(msg.content);
+    const previousMessages = history.map((msg) => {
+      const text = typeof msg.content === "string" ? msg.content : "";
+      return msg.role === "user"
+        ? new HumanMessage(text)
+        : new AIMessage(text);
     });
 
     // Construct the complete state object

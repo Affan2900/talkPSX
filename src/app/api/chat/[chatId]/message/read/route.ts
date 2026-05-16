@@ -5,7 +5,7 @@ import { eq, sql } from "drizzle-orm";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { chatId: string } }
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
   const { chatId } = await params;
   // Validate chatId

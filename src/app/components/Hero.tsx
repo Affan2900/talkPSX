@@ -62,7 +62,14 @@ export default function Hero() {
     };
 
     checkAndCreateUser();
-  }, [user?.id]);
+  }, [
+    user?.id,
+    user?.firstName,
+    user?.lastName,
+    user?.fullName,
+    user?.username,
+    user?.primaryEmailAddress?.emailAddress,
+  ]);
 
   // console.log("User object:", user);
 

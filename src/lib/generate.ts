@@ -3,7 +3,7 @@ import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { Document } from "@langchain/core/documents";
 import { Annotation } from "@langchain/langgraph";
-import {  BaseMessage , AIMessage, HumanMessage, MessageContent} from "@langchain/core/messages";
+import {  BaseMessage } from "@langchain/core/messages";
 import OllamaEmbeddings from "@/lib/ollamaEmbedding";
 import { databaseUrlToPgConfig } from "@/lib/databaseUrlToPgConfig";
 import {
@@ -123,33 +123,37 @@ const generate = async (state: State) => {
 
   const titleResponse = await chatModel.invoke(titleMessages);
 
-  // Type guard for text messages
-function isTextContent(
-  c: MessageContent | any
-): c is { type: "text"; text: string } {
-  return c.type === "text" && typeof c.text === "string";
-}
+  function isTextContent(c: unknown): c is { type: "text"; text: string } {
+    return (
+      typeof c === "object" &&
+      c !== null &&
+      "type" in c &&
+      (c as { type: unknown }).type === "text" &&
+      "text" in c &&
+      typeof (c as { text: unknown }).text === "string"
+    );
+  }
+
   // Normalize response.content to a string
-let rawText = "";
+  let rawText = "";
 
-// Handle different types of response.content
-if (typeof response.content === "string") {
-  rawText = response.content;
-} else if (Array.isArray(response.content)) {
-  rawText = response.content
-    .filter(isTextContent)
-    .map(c => c.text)
-    .join("\n");
-}
+  // Handle different types of response.content
+  if (typeof response.content === "string") {
+    rawText = response.content;
+  } else if (Array.isArray(response.content)) {
+    rawText = response.content
+      .filter(isTextContent)
+      .map((c) => c.text)
+      .join("\n");
+  }
 
-// Now safe to use .replace
-let cleaned = rawText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+  const cleaned = rawText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
 
-return {
-  answer: cleaned,
-  title: titleResponse.content,
-  messages: state.messages
-};
+  return {
+    answer: cleaned,
+    title: titleResponse.content,
+    messages: state.messages
+  };
 };
 
 export default generate;

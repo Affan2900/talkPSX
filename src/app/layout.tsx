@@ -6,7 +6,6 @@ import {
   SignedOut,
   UserButton
 } from '@clerk/nextjs';
-import { Roboto } from "next/font/google";
 import "./globals.css";
 
 
