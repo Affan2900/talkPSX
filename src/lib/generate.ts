@@ -64,7 +64,8 @@ const titlePromptTemplate: ChatPromptTemplate = ChatPromptTemplate.fromMessages(
 ]);
 
 
-// Define State Annotations
+// Define State Annotations (value used for `typeof … .State` typing)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- only referenced in `typeof StateAnnotation.State`
 const StateAnnotation = Annotation.Root({
   question: Annotation<string>(),
   context: Annotation<Document[]>({

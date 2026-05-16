@@ -122,7 +122,7 @@ function mergeRefs<T>(...refs: Array<React.Ref<T> | undefined>) {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Slot merges arbitrary child props for cloneElement
 type AnyProps = Record<string, any>;
 
 type SlotProps<E extends Element = HTMLElement> = {
@@ -472,9 +472,12 @@ function getVariants<
 
   if (loop) {
     for (const key in result) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const state = result[key] as any;
-      const transition = state.animate?.transition;
+      const state = result[key] as {
+        animate?: { transition?: Record<string, unknown> };
+      };
+      const animate = state.animate;
+      if (!animate) continue;
+      const transition = animate.transition;
       if (!transition) continue;
 
       const hasNestedKeys = Object.values(transition).some(
@@ -497,7 +500,7 @@ function getVariants<
           }
         }
       } else {
-        state.animate.transition = {
+        animate.transition = {
           ...transition,
           repeat: Infinity,
           repeatType: 'loop',
