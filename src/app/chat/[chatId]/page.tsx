@@ -57,23 +57,21 @@ export default function ChatPage() {
     sender: msg.senderId !== "ai" ? "user" : ("ai" as "user" | "ai"),
   }));
 
-  console.log("Messages:", formattedMessages); // Debugging
-
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar
         isOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
       />
       <main
-        className={`flex-1 transition-all ${
+        className={`flex min-h-0 min-w-0 flex-1 flex-col transition-all ${
           isSidebarOpen ? "ml-[300px]" : "ml-0"
         }`}
       >
         {loading ? (
-          <div className="h-full w-full flex flex-col items-center justify-center bg-gradient-to-b from-green-50 to-white">
+          <div className="flex h-full w-full flex-col items-center justify-center bg-slate-50">
             <motion.div
-              className="w-12 h-12 border-4 border-green-200 border-t-green-500 rounded-full"
+              className="h-8 w-8 rounded-full border-2 border-muted border-t-green-600"
               animate={{ rotate: 360 }}
               transition={{
                 duration: 1,
@@ -81,7 +79,7 @@ export default function ChatPage() {
                 ease: "linear",
               }}
             />
-            <p className="mt-4 text-green-600 font-medium">
+            <p className="mt-3 text-sm font-medium text-muted-foreground">
               Loading conversation...
             </p>
           </div>

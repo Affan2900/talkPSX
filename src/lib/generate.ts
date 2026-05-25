@@ -11,6 +11,12 @@ import {
   resolveOllamaChatModel,
   resolveOllamaEmbeddingModel,
 } from "@/lib/ollamaEnv";
+import { resolveChatSystemPrompt } from "@/lib/prompts/chatSystemPrompt";
+import {
+  normalizeMessageContent,
+  sanitizeChatTitle,
+  stripThinkingBlocks,
+} from "@/lib/cleanLlmOutput";
 import * as dotenv from "dotenv";
 
 // Load environment variables from .env file
@@ -41,12 +47,9 @@ const chatModel = new ChatOllama({
   model: resolveOllamaChatModel(),
 });
 
-// Define the prompt template
+// Define the prompt template (system message from resolveChatSystemPrompt)
 const promptTemplate = ChatPromptTemplate.fromMessages([
-  [
-    "system",
-    "You are a specialized financial analyst focusing on Pakistan Stock Exchange stocks and market trends. Use the provided context and chat history to deliver concise insights on stock performance, trend analysis, and market data specific to the Pakistan Stock Exchange. If you are unsure, please state that you don't have enough information. Keep your responses under three sentences.",
-  ],
+  ["system", resolveChatSystemPrompt()],
   ["placeholder", "{chat_history}"],
   ["human", "Question: {question}\nContext: {context}\nAnswer:"],
 ]);
@@ -55,7 +58,8 @@ const titlePromptTemplate: ChatPromptTemplate = ChatPromptTemplate.fromMessages(
   [
     "human",
     `Based on the following conversation, generate a concise and descriptive title that summarizes the main topic or question discussed.
-    
+
+    Return only the title text. No reasoning, tags, or XML.
     YOU MUST ALWAYS RETURN A TITLE AND IT SHOULD MUST BE LESS THAN 5 WORDS.
 
     Conversation: {conversation}
@@ -121,45 +125,22 @@ const generate = async (state: State) => {
   // Use the chatModel to get a single response instead of streaming
   const response = await chatModel.invoke(formattedMessages);
 
-  // console.log("Response: ", response);
+  const cleanedAnswer = stripThinkingBlocks(
+    normalizeMessageContent(response.content)
+  );
 
-  // Generate a title based on the conversation
+  // Generate title after answer is cleaned (title prompt sees clean text)
   const titleMessages = await titlePromptTemplate.invoke({
-    conversation: `Question: ${state.question}\nAnswer: ${response.content}`,
+    conversation: `Question: ${state.question}\nAnswer: ${cleanedAnswer}`,
   });
 
   const titleResponse = await chatModel.invoke(titleMessages);
-
-  function isTextContent(c: unknown): c is { type: "text"; text: string } {
-    return (
-      typeof c === "object" &&
-      c !== null &&
-      "type" in c &&
-      (c as { type: unknown }).type === "text" &&
-      "text" in c &&
-      typeof (c as { text: unknown }).text === "string"
-    );
-  }
-
-  // Normalize response.content to a string
-  let rawText = "";
-
-  // Handle different types of response.content
-  if (typeof response.content === "string") {
-    rawText = response.content;
-  } else if (Array.isArray(response.content)) {
-    rawText = response.content
-      .filter(isTextContent)
-      .map((c) => c.text)
-      .join("\n");
-  }
-
-  const cleaned = rawText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+  const title = sanitizeChatTitle(titleResponse.content, state.question);
 
   return {
-    answer: cleaned,
-    title: titleResponse.content,
-    messages: state.messages
+    answer: cleanedAnswer,
+    title,
+    messages: state.messages,
   };
 };
 

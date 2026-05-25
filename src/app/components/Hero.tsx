@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import AnimatedText from "./AnimatedText";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import Sidebar from "./Sidebar"; 
 import { ArrowUpRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner"
 
 const texts = [
@@ -17,16 +17,16 @@ const texts = [
   "In-Depth Analysis and Predictions for PSX Stocks"
 ];
 
-export default function Hero() {
+type HeroProps = {
+  sidebarOpen?: boolean;
+};
+
+export default function Hero({ sidebarOpen = false }: HeroProps) {
   const router = useRouter();
   const { user } = useUser();
   const [query, setQuery] = useState("");
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false); 
-
-  // Toggle sidebar functionP
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   // Check if the user exists in the database, create if not
   useEffect(() => {
@@ -154,11 +154,12 @@ export default function Hero() {
   };
 
   return (
-    <>
-      {/* Add the Sidebar component */}
-      <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-      
-      <div className={`flex flex-col justify-center items-center h-[calc(100vh-theme(spacing.24))] py-12 px-4 transition-all duration-300 ${sidebarOpen ? 'lg:ml-72' : ''}`}>
+    <div
+      className={cn(
+        "flex h-[calc(100vh-theme(spacing.24))] flex-col items-center justify-center px-4 py-12 transition-[margin-left] duration-300 ease-in-out",
+        sidebarOpen && "md:ml-[300px]"
+      )}
+    >
         <div className="text-center mb-12">
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
@@ -218,7 +219,6 @@ export default function Hero() {
             <strong>Answer:</strong> {answer}
           </motion.div>
         )}
-      </div>
-    </>
+    </div>
   );
 }

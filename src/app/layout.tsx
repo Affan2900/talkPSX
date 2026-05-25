@@ -1,24 +1,11 @@
 import type { Metadata } from "next";
-import {
-  ClerkProvider,
-  SignInButton,
-  SignedIn,
-  SignedOut,
-  UserButton
-} from '@clerk/nextjs';
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
-
-
-// const roboto = Roboto({
-//   variable: "--font-roboto",
-//   subsets: ["latin"],
-//   weight: ["400", "700"]
-// });
-
 
 export const metadata: Metadata = {
   title: "Talk PSX",
-  description: "Get insights and trends for PSX companies with our AI-powered chat",
+  description:
+    "Get insights and trends for PSX companies with our AI-powered chat",
 };
 
 export default function RootLayout({
@@ -28,21 +15,9 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider afterSignOutUrl={"/"}>
-    <html lang="en">
-      <body
-        className={`antialiased`}
-      >
-        <SignedOut>
-            <SignInButton />
-          </SignedOut>
-          <SignedIn>
-            <div className="absolute top-4 right-4">
-    <UserButton />
-  </div>
-          </SignedIn>
-        {children}
-      </body>
-    </html>
+      <html lang="en">
+        <body className="antialiased">{children}</body>
+      </html>
     </ClerkProvider>
   );
 }

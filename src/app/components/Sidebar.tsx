@@ -15,6 +15,8 @@ interface Chat {
   title: string;
 }
 
+export const SIDEBAR_WIDTH_PX = 300;
+
 export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean; toggleSidebar: () => void }) {
   const [chats, setChats] = useState<Chat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,57 +82,87 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean; to
 
   return (
     <>
-      <motion.div
-        initial={{ width: isOpen ? 300 : 0 }}
-        animate={{ width: isOpen ? 300 : 0 }}
-        transition={{ duration: 0.3 }}
-        className={cn(
-          "fixed left-0 top-0 bottom-0 z-40 bg-gradient-to-b from-green-400 to-green-500",
-          "border-r border-white/10 backdrop-blur-sm",
-          isOpen ? "shadow-xl" : ""
-        )}
-      >
-        {isOpen && (
-          <div className="flex flex-col h-full text-white">
-            <div className="p-4 border-b border-white/10">
-              <Button onClick={handleNewChat} className="w-full text-lg bg-white/10 hover:bg-white/20 text-white border-0">
-                <PlusCircle className="mr-1" style={{width: '20px', height: '20px'}} />
-                New Chat
-              </Button>
-            </div>
-
-            <ScrollArea className="flex-1 px-3">
-              <div className="space-y-2 py-4 pl-2">
-                {isLoading ? (
-                  <div className="text-center text-white/60">Loading chats...</div>
-                ) : chats.length === 0 ? (
-                  <div className="text-center text-white/60">No chats yet</div>
-                ) : (
-                  chats.map((chat) => (
-                    <ChatItem key={chat.id} chat={chat} onDeleteChat={handleDeleteChat}/>
-                  ))
-                )}
+      <div className="pointer-events-none fixed left-0 top-0 bottom-0 z-40">
+        <motion.div
+          initial={false}
+          animate={{ width: isOpen ? SIDEBAR_WIDTH_PX : 0 }}
+          transition={{ duration: 0.3 }}
+          className={cn(
+            "relative h-full overflow-hidden pointer-events-auto",
+            "bg-gradient-to-b from-green-400 to-green-500",
+            "border-r border-white/10 backdrop-blur-sm",
+            isOpen && "shadow-xl"
+          )}
+        >
+          {isOpen && (
+            <div
+              className="flex h-full flex-col text-white"
+              style={{ width: SIDEBAR_WIDTH_PX }}
+            >
+              <div className="border-b border-white/10 p-4">
+                <Button
+                  onClick={handleNewChat}
+                  className="w-full border-0 bg-white/10 text-lg text-white hover:bg-white/20"
+                >
+                  <PlusCircle className="mr-1 h-5 w-5" />
+                  New Chat
+                </Button>
               </div>
-            </ScrollArea>
-          </div>
-        )}
 
-<Button
-  variant="ghost"
-  size="icon"
-  onClick={toggleSidebar}
-  className={cn(
-    "absolute -right-10 top-4 bg-green-500 text-white hover:bg-green-600 rounded-full",
-    "border border-white/10 shadow-lg"
-  )}
->
-  {isOpen ? <ChevronLeft /> : <ChevronRight />}
-</Button>
+              <ScrollArea className="flex-1 px-3">
+                <div className="space-y-2 py-4 pl-2">
+                  {isLoading ? (
+                    <div className="text-center text-white/60">
+                      Loading chats...
+                    </div>
+                  ) : chats.length === 0 ? (
+                    <div className="text-center text-white/60">No chats yet</div>
+                  ) : (
+                    chats.map((chat) => (
+                      <ChatItem
+                        key={chat.id}
+                        chat={chat}
+                        onDeleteChat={handleDeleteChat}
+                      />
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
+        </motion.div>
 
-      </motion.div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleSidebar}
+          aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
+          className={cn(
+            "pointer-events-auto absolute top-4 z-50",
+            "h-10 w-10 shrink-0 rounded-none p-0",
+            "border border-white/20 bg-green-500 text-white shadow-md",
+            "transition-[left] duration-300 hover:bg-green-600",
+            isOpen ? "rounded-r-sm" : "left-0 rounded-r-sm"
+          )}
+          style={{
+            left: isOpen ? SIDEBAR_WIDTH_PX : 0,
+          }}
+        >
+          {isOpen ? (
+            <ChevronLeft className="h-5 w-5" />
+          ) : (
+            <ChevronRight className="h-5 w-5" />
+          )}
+        </Button>
+      </div>
 
-      {/* Overlay for mobile */}
-      {isOpen && <div className="fixed inset-0 bg-black/20 z-30 lg:hidden" onClick={toggleSidebar} />}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/20 lg:hidden"
+          onClick={toggleSidebar}
+          aria-hidden
+        />
+      )}
     </>
   );
 }
