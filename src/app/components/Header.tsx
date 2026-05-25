@@ -5,8 +5,13 @@ import Image from "next/image";
 import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { smoothScrollToId, smoothScrollToY } from "@/lib/smoothScrollTo";
 
-const NAV_LINKS = ["Home", "About", "Services"] as const;
+const NAV_ITEMS = [
+  { label: "Home", onClick: () => smoothScrollToY(0) },
+  { label: "About", onClick: () => smoothScrollToId("about") },
+  { label: "Services", onClick: () => smoothScrollToId("features") },
+] as const;
 
 type HeaderProps = {
   sidebarOpen?: boolean;
@@ -48,14 +53,15 @@ export default function Header({ sidebarOpen = false }: HeaderProps) {
         </Link>
 
         <div className="hidden flex-1 items-center justify-center gap-6 md:flex">
-          {NAV_LINKS.map((label) => (
-            <Link
+          {NAV_ITEMS.map(({ label, onClick }) => (
+            <button
               key={label}
-              href="#"
-              className="text-sm font-medium text-white/90 transition-colors hover:text-white"
+              type="button"
+              onClick={onClick}
+              className="cursor-pointer text-sm font-medium text-white/90 transition-colors hover:text-white"
             >
               {label}
-            </Link>
+            </button>
           ))}
         </div>
 

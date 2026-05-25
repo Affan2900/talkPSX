@@ -1,70 +1,61 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { TrendingUp, PieChart, Clock, Zap } from "lucide-react"
+import { motion } from "framer-motion";
+import { BentoGrid, type BentoCardItem } from "./BentoCard";
 
-const features = [
+const features: BentoCardItem[] = [
   {
-    name: "Real-time Data",
-    description: "Get up-to-the-minute information on PSX stocks and trends.",
-    icon: Clock,
+    title: "Real-time Data",
+    description:
+      "Up-to-the-minute PSX prices, volume, and momentum without leaving the thread.",
+    icon: "hugeicons:clock-01",
   },
   {
-    name: "Trend Analysis",
-    description: "AI-powered insights on market trends and predictions.",
-    icon: TrendingUp,
+    title: "Trend Analysis",
+    description:
+      "Spot sector moves and price patterns with AI summaries you can question further.",
+    icon: "hugeicons:analytics-up",
   },
   {
-    name: "Company Financials",
-    description: "Detailed financial information for all PSX-listed companies.",
-    icon: PieChart,
+    title: "Company Financials",
+    description:
+      "Balance sheets, ratios, and filings context for listed companies on the PSX.",
+    icon: "hugeicons:pie-chart-01",
   },
   {
-    name: "Instant Answers",
-    description: "Get quick responses to your stock market queries.",
-    icon: Zap,
+    title: "Instant Answers",
+    description:
+      "Ask in plain English and get focused replies—no menu diving required.",
+    icon: "hugeicons:flash",
   },
-]
+];
 
 export default function Features() {
   return (
-    <div className="py-20 bg-white bg-opacity-80 backdrop-blur-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section
+      id="features"
+      className="scroll-mt-24 bg-zinc-50/90 py-20 backdrop-blur-sm"
+    >
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="lg:text-center mb-12"
+          className="mb-10 lg:text-center"
         >
-        
-          <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-green-800 sm:text-4xl">
-            Powerful AI for PSX Insights
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-emerald-700/80">
+            Services
           </p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+            Powerful AI for PSX insights
+          </h2>
         </motion.div>
 
-        <div className="mt-10">
-          <dl className="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
-            {features.map((feature, index) => (
-              <motion.div
-                key={feature.name}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="relative bg-white p-6 rounded-lg shadow-md"
-              >
-                <dt>
-                  <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-green-500 text-white">
-                    <feature.icon className="h-6 w-6" aria-hidden="true" />
-                  </div>
-                  <p className="ml-16 text-lg leading-6 font-medium text-green-800">{feature.name}</p>
-                </dt>
-                <dd className="mt-2 ml-16 text-base text-green-600">{feature.description}</dd>
-              </motion.div>
-            ))}
-          </dl>
-        </div>
+        <BentoGrid
+          items={features}
+          columnsClassName="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+        />
       </div>
-    </div>
-  )
+    </section>
+  );
 }
-
