@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import ChatInterface from "@/app/components/ChatInterface";
 import Sidebar from "@/app/components/Sidebar";
@@ -17,12 +17,37 @@ export default function ChatPage() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const { chatId } = useParams();
+  const searchParams = useSearchParams();
+  const isNewChat = searchParams.get("new") === "1";
 
   useEffect(() => {
     const fetchChatData = async () => {
       if (typeof chatId !== "string") {
         console.error("Invalid chatId:", chatId);
         setLoading(false);
+        return;
+      }
+
+      // Brand-new chat — no messages exist yet, skip the DB fetch
+      if (isNewChat) {
+        setLoading(false);
+        return;
+      }
+
+      if (chatId.startsWith("local-")) {
+        try {
+          const stored = sessionStorage.getItem(`chat_${chatId}`);
+          if (stored) {
+            setChatMessages(JSON.parse(stored));
+          } else {
+            setChatMessages([]);
+          }
+        } catch (error) {
+          console.error("Failed to parse local chat data:", error);
+          setChatMessages([]);
+        } finally {
+          setLoading(false);
+        }
         return;
       }
 
@@ -85,7 +110,11 @@ export default function ChatPage() {
           </div>
         ) : (
           typeof chatId === "string" && (
-            <ChatInterface initialMessages={formattedMessages} chatId={chatId} />
+            <ChatInterface 
+              initialMessages={formattedMessages} 
+              chatId={chatId} 
+              isLocal={chatId.startsWith("local-")}
+            />
           )
         )}
       </main>

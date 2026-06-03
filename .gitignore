@@ -46,3 +46,7 @@ next-env.d.ts
 
 # local DB dumps (large; may contain sensitive data)
 *.backup
+
+# python / evaluation
+/evaluation/.venv/
+/evaluation/*.csv

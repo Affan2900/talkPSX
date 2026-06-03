@@ -40,7 +40,7 @@ export function BentoCard({
           aria-hidden
         />
       </div>
-      <div className="mt-auto pt-12">
+      <div className="pt-12">
         <h3 className="text-base font-semibold tracking-tight text-zinc-900">
           {title}
         </h3>

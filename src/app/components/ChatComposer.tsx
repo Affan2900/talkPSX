@@ -1,8 +1,7 @@
 "use client";
 
-import { ArrowUpRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useRef, useEffect } from "react";
+import { ArrowUp } from "lucide-react";
 
 interface ChatComposerProps {
   input: string;
@@ -17,30 +16,60 @@ export default function ChatComposer({
   onSubmit,
   disabled = false,
 }: ChatComposerProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea height to fit content
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [input]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (!disabled && input.trim()) {
+        onSubmit(e as unknown as React.FormEvent);
+      }
+    }
+  };
+
   return (
-    <div className="sticky bottom-0 border-t border-border bg-background/80 px-4 py-3 backdrop-blur-sm md:py-4">
-      <div className="mx-auto w-full max-w-4xl">
+    <div className="px-4 pb-5 pt-2 md:px-6 md:pb-6">
+      <div className="mx-auto w-full max-w-3xl">
         <form
           onSubmit={onSubmit}
-          className="flex items-end gap-2 rounded-2xl border border-input bg-card px-3 py-2 shadow-sm"
+          className="relative rounded-2xl border border-input bg-card shadow-md"
         >
-          <Input
-            type="text"
+          <textarea
+            ref={textareaRef}
             value={input}
             onChange={(e) => onInputChange(e.target.value)}
+            onKeyDown={handleKeyDown}
             disabled={disabled}
-            placeholder="Ask about PSX stocks..."
-            className="min-h-[40px] flex-1 border-0 bg-transparent px-3 py-2.5 text-base shadow-none focus-visible:ring-0"
+            placeholder="Message Talk PSX..."
+            rows={1}
+            className="w-full resize-none rounded-2xl bg-transparent px-4 pb-14 pt-4 text-base leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+            style={{ maxHeight: "200px", overflowY: "auto" }}
           />
-          <Button
-            type="submit"
-            disabled={disabled || !input.trim()}
-            size="icon"
-            className="h-10 w-10 shrink-0 rounded-xl bg-green-600 text-white hover:bg-green-700"
-          >
-            <ArrowUpRight className="h-5 w-5" />
-          </Button>
+
+          {/* Send button — bottom-right inside the container */}
+          <div className="absolute bottom-3 right-3">
+            <button
+              type="submit"
+              disabled={disabled || !input.trim()}
+              aria-label="Send message"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-600 text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ArrowUp className="h-5 w-5" />
+            </button>
+          </div>
         </form>
+
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          Enter to send · Shift+Enter for new line
+        </p>
       </div>
     </div>
   );

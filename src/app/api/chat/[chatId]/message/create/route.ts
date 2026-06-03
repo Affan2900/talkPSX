@@ -10,9 +10,8 @@ type ClientChatTurn = { role: string; content: unknown };
 
 export async function POST(req: NextRequest) {
   try {
-    const { question, chat_history = [], chatId } = await req.json();
+    const { question, chat_history = [], chatId, userId } = await req.json();
 
-    // Validate the question and chatId
     if (!question || typeof question !== "string" || !chatId) {
       return NextResponse.json(
         { error: "Valid question and chatId are required" },
@@ -21,15 +20,26 @@ export async function POST(req: NextRequest) {
     }
 
     const db = await getDB();
+
+    // Ensure AI user exists
     await db.insert(users)
       .values({ id: "ai", username: "AI Assistant" })
       .onConflictDoNothing();
+
+    // Save the user message before calling the LLM
+    const senderId = userId ?? "anonymous";
+    if (senderId !== "anonymous") {
+      await db.insert(messages).values({
+        chatId,
+        senderId,
+        content: question,
+      });
+    }
 
     const history: ClientChatTurn[] = Array.isArray(chat_history)
       ? (chat_history as ClientChatTurn[])
       : [];
 
-    // Convert chat history to BaseMessage format
     const previousMessages = history.map((msg) => {
       const text = typeof msg.content === "string" ? msg.content : "";
       return msg.role === "user"
@@ -37,35 +47,24 @@ export async function POST(req: NextRequest) {
         : new AIMessage(text);
     });
 
-    // Construct the complete state object
     const initialState = {
       question: question.trim(),
-      context: [],    // Will be filled by retrieve()
-      answer: "",     // Will be filled by generate()
-      messages: previousMessages // Converted chat history
+      context: [],
+      answer: "",
+      messages: previousMessages,
     };
 
-    // Process the question through the AI pipeline
-    const { answer, messages: updatedMessages } = await generate(initialState);
+    // Skip title generation for follow-up messages — cuts response time in half
+    const { answer } = await generate(initialState, { skipTitle: true });
 
-    // Convert messages back to client-safe format
-    const formattedMessages = updatedMessages.map(msg => ({
-      role: msg._getType(),
-      content: msg.content
-    }));
-
-    // Save AI response to database
+    // Save the AI response
     const newMessage = await db.insert(messages).values({
       chatId,
       senderId: "ai",
       content: answer,
     }).returning();
 
-    return NextResponse.json({ 
-      answer,
-      messages: formattedMessages,
-      savedMessage: newMessage
-    });
+    return NextResponse.json({ answer, savedMessage: newMessage });
   } catch (error) {
     console.error("API Error:", error);
     return NextResponse.json(

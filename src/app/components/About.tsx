@@ -7,7 +7,7 @@ const trustPoints: BentoCardItem[] = [
   {
     title: "Built for PSX",
     description:
-      "Pakistan Stock Exchange companies, trends, and fundamentals—not generic market noise.",
+      "Pakistan Stock Exchange companies, trends, and fundamentals not generic market noise.",
     icon: "hugeicons:chart-increase",
   },
   {
@@ -46,7 +46,7 @@ export default function About() {
           </h2>
           <p className="mt-4 text-base leading-relaxed text-zinc-600">
             Talk PSX is your AI-powered companion for Pakistan&apos;s stock
-            market—helping investors and curious learners get timely insights,
+            market which helps investors and curious learners get timely insights,
             compare companies, and understand PSX trends in plain language.
           </p>
         </motion.div>
@@ -65,7 +65,7 @@ export default function About() {
             We started Talk PSX because researching listed companies often means
             jumping between filings, news, and spreadsheets. Our mission is to
             bring real-time PSX context and thoughtful AI analysis into one
-            conversation—so you spend less time hunting data and more time
+            conversation so you spend less time hunting data and more time
             making informed decisions.
           </p>
         </motion.div>

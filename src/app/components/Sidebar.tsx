@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { PlusCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { PlusCircle, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -68,7 +68,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean; to
         },
           ...prevChats,
         ])
-        router.push(`/chat/${newChat.chatId}`);
+        router.push(`/chat/${newChat.chatId}?new=1`);
       };
     } catch (error) {
       console.error("Failed to create new chat:", error);
@@ -132,28 +132,27 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean; to
           )}
         </motion.div>
 
-        <Button
-          variant="ghost"
-          size="icon"
+        <button
+          type="button"
           onClick={toggleSidebar}
           aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
           className={cn(
-            "pointer-events-auto absolute top-4 z-50",
-            "h-10 w-10 shrink-0 rounded-none p-0",
-            "border border-white/20 bg-green-500 text-white shadow-md",
-            "transition-[left] duration-300 hover:bg-green-600",
-            isOpen ? "rounded-r-sm" : "left-0 rounded-r-sm"
+            "pointer-events-auto absolute z-50",
+            "flex h-16 w-16 shrink-0 items-center justify-center rounded-md p-0",
+            "bg-transparent text-white/80",
+            "transition-[left] duration-300 hover:bg-white/10 hover:text-white",
+            isOpen ? "top-[80px]" : "top-[80px] left-2"
           )}
           style={{
-            left: isOpen ? SIDEBAR_WIDTH_PX : 0,
+            left: isOpen ? SIDEBAR_WIDTH_PX + 8 : undefined,
           }}
         >
           {isOpen ? (
-            <ChevronLeft className="h-5 w-5" />
+            <PanelLeftClose size={28} />
           ) : (
-            <ChevronRight className="h-5 w-5" />
+            <PanelLeftOpen size={28} />
           )}
-        </Button>
+        </button>
       </div>
 
       {isOpen && (

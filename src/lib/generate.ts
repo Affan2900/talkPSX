@@ -95,20 +95,37 @@ const StateAnnotation = Annotation.Root({
 
 type State = typeof StateAnnotation.State;
 
-// Retrieve context from vector store
+// Cosine distance threshold — docs with score above this are considered irrelevant.
+// Lower = stricter. Default 0.5 means "at least 50% similar".
+const RAG_THRESHOLD = (() => {
+  const raw = process.env.RAG_SCORE_THRESHOLD?.trim();
+  if (!raw) return 0.5;
+  const n = parseFloat(raw);
+  return Number.isFinite(n) ? n : 0.5;
+})();
+
+// Retrieve context from vector store, filtering out low-relevance documents.
 const retrieve = async (state: State) => {
   const vectorStore = await getVectorStore();
-  const retrievedDocs = await vectorStore.similaritySearch(state.question);
-  return { context: retrievedDocs };
+  const results = await vectorStore.similaritySearchWithScore(state.question, 4);
+
+  // Keep only docs whose cosine distance is within threshold
+  const relevantDocs = results
+    .filter(([, score]) => score <= RAG_THRESHOLD)
+    .map(([doc]) => doc);
+
+  return { context: relevantDocs };
 };
 
 
 
 // Generate response with proper memory handling
-const generate = async (state: State) => {
-  // Retrieve relevant context
+const generate = async (state: State, options?: { skipTitle?: boolean }) => {
+  // Retrieve relevant context (empty when no docs pass the similarity threshold)
   const { context } = await retrieve(state);
-  const docsContent = context.map((doc) => doc.pageContent).join("\n");
+  const docsContent = context.length > 0
+    ? context.map((doc) => doc.pageContent).join("\n")
+    : "[NO RELEVANT DATA FOUND]";
 
   // Format chat history
   const chatHistory = state.messages
@@ -122,20 +139,20 @@ const generate = async (state: State) => {
     chat_history: chatHistory,
   });
 
-  // Use the chatModel to get a single response instead of streaming
   const response = await chatModel.invoke(formattedMessages);
 
   const cleanedAnswer = stripThinkingBlocks(
     normalizeMessageContent(response.content)
   );
 
-  // Generate title after answer is cleaned (title prompt sees clean text)
-  const titleMessages = await titlePromptTemplate.invoke({
-    conversation: `Question: ${state.question}\nAnswer: ${cleanedAnswer}`,
-  });
-
-  const titleResponse = await chatModel.invoke(titleMessages);
-  const title = sanitizeChatTitle(titleResponse.content, state.question);
+  let title = "";
+  if (!options?.skipTitle) {
+    const titleMessages = await titlePromptTemplate.invoke({
+      conversation: `Question: ${state.question}\nAnswer: ${cleanedAnswer}`,
+    });
+    const titleResponse = await chatModel.invoke(titleMessages);
+    title = sanitizeChatTitle(titleResponse.content, state.question);
+  }
 
   return {
     answer: cleanedAnswer,

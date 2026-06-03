@@ -25,7 +25,7 @@ const features: BentoCardItem[] = [
   {
     title: "Instant Answers",
     description:
-      "Ask in plain English and get focused replies—no menu diving required.",
+      "Ask in plain English and get focused replies, no menu diving required.",
     icon: "hugeicons:flash",
   },
 ];

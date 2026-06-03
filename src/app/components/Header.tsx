@@ -52,20 +52,20 @@ export default function Header({ sidebarOpen = false }: HeaderProps) {
           </span>
         </Link>
 
-        <div className="hidden flex-1 items-center justify-center gap-6 md:flex">
+        <div className="hidden flex-1 items-center justify-center gap-10 md:flex">
           {NAV_ITEMS.map(({ label, onClick }) => (
             <button
               key={label}
               type="button"
               onClick={onClick}
-              className="cursor-pointer text-sm font-medium text-white/90 transition-colors hover:text-white"
+              className="cursor-pointer text-lg font-medium text-white/80 transition-colors hover:text-white"
             >
               {label}
             </button>
           ))}
         </div>
 
-        <div className="ml-auto shrink-0 md:ml-0">
+      <div className="ml-auto shrink-0 md:ml-0">
           {isSignedIn ? (
             <UserButton
               appearance={{

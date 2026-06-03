@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ChatMessageRow, {
   ChatLoadingRow,
@@ -11,12 +12,15 @@ import ChatComposer from "@/app/components/ChatComposer";
 interface ChatInterfaceProps {
   initialMessages: ChatMessage[];
   chatId: string;
+  isLocal?: boolean;
 }
 
 export default function ChatInterface({
   initialMessages,
   chatId,
+  isLocal,
 }: ChatInterfaceProps) {
+  const { user } = useUser();
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -41,13 +45,22 @@ export default function ChatInterface({
     setInput("");
 
     try {
-      const response = await fetch(`/api/chat/${chatId}/message/create`, {
+      const url = isLocal 
+        ? `/api/chat/local` 
+        : `/api/chat/${chatId}/message/create`;
+
+      const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           question,
-          chat_history: updatedMessages,
+          // Map sender→role so the API can correctly classify history messages
+          chat_history: updatedMessages.map((m) => ({
+            role: m.sender,
+            content: m.content,
+          })),
           chatId,
+          userId: user?.id,
         }),
       });
 
@@ -59,7 +72,12 @@ export default function ChatInterface({
           content: data.answer.replace(/^"|"$/g, ""),
           sender: "ai",
         };
-        setMessages((prev) => [...prev, aiMessage]);
+        const newMessages = [...updatedMessages, aiMessage];
+        setMessages(newMessages);
+        
+        if (isLocal) {
+          sessionStorage.setItem(`chat_${chatId}`, JSON.stringify(newMessages));
+        }
       } else {
         console.error("Error:", data.error);
       }
@@ -79,7 +97,7 @@ export default function ChatInterface({
   return (
     <div className="flex h-full min-h-0 flex-col bg-slate-50">
       <ScrollArea className="min-h-0 flex-1 py-6 md:py-8" ref={scrollAreaRef}>
-        <div className="mx-auto w-full max-w-4xl px-4">
+        <div className="mx-auto w-full max-w-3xl px-4 md:px-6">
           {messages.map((message, index) => {
             const prev = messages[index - 1];
             const isSameSenderAsPrevious =

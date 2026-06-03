@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Bot, User } from "lucide-react";
+import { User } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 
 export interface ChatMessage {
@@ -13,6 +14,26 @@ export interface ChatMessage {
 interface ChatMessageRowProps {
   message: ChatMessage;
   isSameSenderAsPrevious: boolean;
+}
+
+function UserAvatar() {
+  const { user } = useUser();
+
+  if (user?.imageUrl) {
+    return (
+      <img
+        src={user.imageUrl}
+        alt={user.fullName ?? "User"}
+        className="h-full w-full rounded-full object-cover"
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-full w-full items-center justify-center rounded-full bg-green-500 text-white">
+      <User className="h-5 w-5 md:h-6 md:w-6" />
+    </div>
+  );
 }
 
 export default function ChatMessageRow({
@@ -32,27 +53,17 @@ export default function ChatMessageRow({
         isSameSenderAsPrevious ? "mt-1" : "mt-6 first:mt-0"
       )}
     >
-      <div className="flex-shrink-0">
-        <div
-          className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-full md:h-12 md:w-12",
-            isUser
-              ? "bg-green-500 text-white"
-              : "border border-green-500/40 bg-card"
-          )}
-        >
-          {isUser ? (
-            <User className="h-5 w-5 md:h-6 md:w-6" />
-          ) : (
-            <Bot className="h-5 w-5 text-green-600 md:h-6 md:w-6" />
-          )}
+      {/* Avatar: user side only */}
+      {isUser && (
+        <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full md:h-12 md:w-12">
+          <UserAvatar />
         </div>
-      </div>
+      )}
 
       <div
         className={cn(
-          "flex min-w-0 max-w-[85%] flex-col md:max-w-[80%]",
-          isUser ? "items-end" : "items-start"
+          "flex min-w-0 flex-col",
+          isUser ? "max-w-[75%] items-end md:max-w-[70%]" : "w-full items-start"
         )}
       >
         {!isUser && !isSameSenderAsPrevious && (
@@ -84,10 +95,7 @@ export default function ChatMessageRow({
 export function ChatLoadingRow() {
   return (
     <div className="mt-6 flex gap-3">
-      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-green-500/40 bg-card md:h-12 md:w-12">
-        <Bot className="h-5 w-5 text-green-600 md:h-6 md:w-6" />
-      </div>
-      <div className="flex flex-col items-start">
+      <div className="flex w-full flex-col items-start">
         <span className="mb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           Talk PSX
         </span>

@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import AnimatedText from "./AnimatedText";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner"
 
@@ -27,6 +25,14 @@ export default function Hero({ sidebarOpen = false }: HeroProps) {
   const [query, setQuery] = useState("");
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [query]);
 
   // Check if the user exists in the database, create if not
   useEffect(() => {
@@ -79,7 +85,41 @@ export default function Hero({ sidebarOpen = false }: HeroProps) {
     if (!query.trim()) return;
 
     if (!user) {
-      setAnswer("Login First");
+      setLoading(true);
+      setAnswer("");
+      try {
+        const localChatId = "local-" + crypto.randomUUID();
+        
+        const response = await fetch(`/api/chat/local`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: query, chatId: localChatId }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          const aiResponse = data.answer.replace(/^"|"$/g, "");
+          setAnswer(aiResponse);
+
+          // Prepare messages array and store in sessionStorage
+          const initialMessages = [
+            { id: `${Date.now()}`, content: query, senderId: "user" },
+            { id: `${Date.now() + 1}`, content: aiResponse, senderId: "ai" }
+          ];
+          sessionStorage.setItem(`chat_${localChatId}`, JSON.stringify(initialMessages));
+
+          router.push(`/chat/${localChatId}`);
+        } else {
+          setAnswer("Error: " + data.error);
+        }
+      } catch (error) {
+        setAnswer("Failed to fetch response.");
+        console.error("API Error:", error);
+      } finally {
+        setLoading(false);
+      }
+      setQuery("");
       return;
     }
 
@@ -184,28 +224,34 @@ export default function Hero({ sidebarOpen = false }: HeroProps) {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
           onSubmit={handleSubmit}
-          className="w-full max-w-4xl"
+          className="relative w-full max-w-3xl rounded-2xl border border-input bg-card shadow-md"
         >
-          <div className="flex flex-col md:flex-row items-center bg-white rounded-full shadow-lg overflow-hidden h-16">
-            <Input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ask about PSX companies and trends..."
-              className="flex-grow px-6 py-6 text-lg md:text-xl text-zinc-800 h-14 w-3/4 rounded-fulll"
-              style={{
-    border: 'none',
-    outline: 'none',
-    boxShadow: 'none'
-  }}
-            />
-            <Button
+          <textarea
+            ref={textareaRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (!loading && query.trim()) handleSubmit(e as unknown as React.FormEvent);
+              }
+            }}
+            disabled={loading}
+            placeholder="Ask about PSX companies and trends..."
+            rows={1}
+            className="w-full resize-none rounded-2xl bg-transparent px-4 pb-14 pt-4 text-base leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+            style={{ maxHeight: "200px", overflowY: "auto" }}
+          />
+
+          <div className="absolute bottom-3 right-3">
+            <button
               type="submit"
-              className="h-full w-24 bg-green-500 hover:bg-green-600 text-white text-lg md:text-xl transition duration-300 ease-in-out rounded-full"
-              disabled={loading}
+              disabled={loading || !query.trim()}
+              aria-label="Send message"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-600 text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {loading ? <Spinner /> :<ArrowUpRight style={{width: '50px', height: '50px'}} />}
-            </Button>
+              {loading ? <Spinner /> : <ArrowUp className="h-5 w-5" />}
+            </button>
           </div>
         </motion.form>
 

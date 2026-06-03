@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/db";
 import { chats } from "@/app/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export async function GET(
   request: NextRequest,
@@ -23,7 +23,7 @@ export async function GET(
       .select()
       .from(chats)
       .where(eq(chats.createdBy, userId))
-      .orderBy(chats.createdAt)
+      .orderBy(desc(chats.createdAt))
       .execute();
 
     return NextResponse.json({ chats: userChats }, { status: 200 });
