@@ -5,8 +5,15 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "reportlab>=4.4.4",
+    # ingestion pipeline (ingest.py)
+    "psxdata>=0.1.0a3",
+    "pgvector>=0.3.6",
+    "psycopg2-binary>=2.9",
+    "python-dotenv>=1.0",
+    "huggingface-hub>=0.24",
     "requests>=2.32.5",
-    "torch>=2.8.0",
-    "transformers>=4.56.1",
+    # quote API (api.py)
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "mangum>=0.19",
 ]

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export interface ChatMessage {
@@ -21,10 +22,11 @@ function UserAvatar() {
 
   if (user?.imageUrl) {
     return (
-      <img
+      <Image
         src={user.imageUrl}
         alt={user.fullName ?? "User"}
-        className="h-full w-full rounded-full object-cover"
+        fill
+        className="rounded-full object-cover"
       />
     );
   }

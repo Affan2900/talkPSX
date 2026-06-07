@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "img.clerk.com" },
+    ],
+  },
   // Monorepo: parent folder has another lockfile; keep tracing rooted to this app (Vercel + local builds).
   outputFileTracingRoot: path.join(__dirname),
 };

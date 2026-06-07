@@ -1,16 +1,11 @@
-
-
 import { NextResponse } from "next/server";
-import createAndStoreEmbeddings from "@/lib/createEmbeddings";
 
 export const runtime = "nodejs";
 
+// Ingestion is handled by data-pipeline/ingest.py (psxdata → Ollama → PGVector).
+// Run `python data-pipeline/ingest.py` to populate or refresh the psx_kse100 table.
 export async function GET() {
-  try {
-    await createAndStoreEmbeddings(); // Run once
-    return NextResponse.json({ message: "Embeddings stored successfully." });
-  } catch (error) {
-    console.error("Error storing embeddings:", error);
-    return NextResponse.json({ error: "Failed to store embeddings." }, { status: 500 });
-  }
+  return NextResponse.json({
+    message: "Ingestion is managed by the Python pipeline. Run: python data-pipeline/ingest.py",
+  });
 }

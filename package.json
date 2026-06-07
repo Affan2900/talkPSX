@@ -6,7 +6,11 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "ingest": "uv run --project data-pipeline python data-pipeline/ingest.py",
+    "ingest:force": "uv run --project data-pipeline python data-pipeline/ingest.py --force",
+    "ingest:dry": "uv run --project data-pipeline python data-pipeline/ingest.py --dry-run",
+    "quote-api": "uv run --project data-pipeline uvicorn data-pipeline.api:app --port 8001 --reload"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.12.0",

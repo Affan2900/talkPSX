@@ -1,21 +1,13 @@
 'use server'
 import { CSVLoader } from "@langchain/community/document_loaders/fs/csv";
-import OllamaEmbeddings from "@/lib/ollamaEmbedding";
+import { resolveEmbeddings } from "@/lib/embeddingProvider";
 import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { databaseUrlToPgConfig } from "@/lib/databaseUrlToPgConfig";
-import {
-  resolveOllamaBaseUrl,
-  resolveOllamaEmbeddingModel,
-} from "@/lib/ollamaEnv";
 import fs from 'fs';
 import path from 'path';
 
-// Embeddings: OLLAMA_EMBEDDING_MODEL (default nomic-embed-text:latest). Chat LLM is separate (generate.ts).
-const embeddings = new OllamaEmbeddings(
-  resolveOllamaEmbeddingModel(),
-  resolveOllamaBaseUrl()
-);
+const embeddings = resolveEmbeddings();
 
 async function loadCSV() {
   const filePath = path.join(process.cwd(), 'src/documents/Updated_Dividend_Stock_Scores.csv');
@@ -44,7 +36,13 @@ export default async function createAndStoreEmbeddings() {
   // exists, drop the LangChain table for this name (or use a new tableName) then re-run this job.
   const vectorStore = await PGVectorStore.initialize(embeddings, {
     postgresConnectionOptions: databaseUrlToPgConfig(),
-    tableName: "Dividend_Stock_Scores",
+    tableName: "psx_kse100",
+    columns: {
+      idColumnName: "id",
+      vectorColumnName: "embedding",
+      contentColumnName: "text",
+      metadataColumnName: "metadata",
+    },
   });
   await vectorStore.addDocuments(splitDocs);
 

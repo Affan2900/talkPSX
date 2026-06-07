@@ -4,13 +4,11 @@ import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { Document } from "@langchain/core/documents";
 import { Annotation } from "@langchain/langgraph";
 import {  BaseMessage } from "@langchain/core/messages";
-import OllamaEmbeddings from "@/lib/ollamaEmbedding";
+import { resolveEmbeddings } from "@/lib/embeddingProvider";
 import { databaseUrlToPgConfig } from "@/lib/databaseUrlToPgConfig";
-import {
-  resolveOllamaBaseUrl,
-  resolveOllamaChatModel,
-  resolveOllamaEmbeddingModel,
-} from "@/lib/ollamaEnv";
+import { resolveOllamaBaseUrl, resolveOllamaChatModel } from "@/lib/ollamaEnv";
+import { detectLiveQuoteSymbol } from "@/lib/liveQuoteDetect";
+import { fetchLiveQuote } from "@/lib/quoteService";
 import { resolveChatSystemPrompt } from "@/lib/prompts/chatSystemPrompt";
 import {
   normalizeMessageContent,
@@ -28,13 +26,16 @@ let vectorStorePromise: ReturnType<typeof PGVectorStore.initialize> | null = nul
 function getVectorStore() {
   if (!vectorStorePromise) {
     vectorStorePromise = PGVectorStore.initialize(
-      new OllamaEmbeddings(
-        resolveOllamaEmbeddingModel(),
-        resolveOllamaBaseUrl()
-      ),
+      resolveEmbeddings(),
       {
         postgresConnectionOptions: databaseUrlToPgConfig(),
-        tableName: "Dividend_Stock_Scores",
+        tableName: "psx_kse100",
+        columns: {
+          idColumnName: "id",
+          vectorColumnName: "embedding",
+          contentColumnName: "text",
+          metadataColumnName: "metadata",
+        },
       }
     );
   }
@@ -104,25 +105,33 @@ const RAG_THRESHOLD = (() => {
   return Number.isFinite(n) ? n : 0.5;
 })();
 
-// Retrieve context from vector store, filtering out low-relevance documents.
+// Retrieve context: live quote (if price query) + vector store results.
 const retrieve = async (state: State) => {
+  // Phase 2: detect live price queries and fetch real-time data
+  const liveSymbol = detectLiveQuoteSymbol(state.question);
+  const liveContext = liveSymbol ? await fetchLiveQuote(liveSymbol) : null;
+
   const vectorStore = await getVectorStore();
   const results = await vectorStore.similaritySearchWithScore(state.question, 4);
-
-  // Keep only docs whose cosine distance is within threshold
   const relevantDocs = results
     .filter(([, score]) => score <= RAG_THRESHOLD)
     .map(([doc]) => doc);
 
+  // Prepend live data so the LLM sees it first and treats it as authoritative
+  if (liveContext) {
+    return { context: [new Document({ pageContent: liveContext }), ...relevantDocs] };
+  }
   return { context: relevantDocs };
 };
 
 
 
-// Generate response with proper memory handling
+// Generate response with proper memory handling.
+// If state.context is already populated it is used directly (skips retrieve).
 const generate = async (state: State, options?: { skipTitle?: boolean }) => {
-  // Retrieve relevant context (empty when no docs pass the similarity threshold)
-  const { context } = await retrieve(state);
+  const { context } = state.context.length > 0
+    ? { context: state.context }
+    : await retrieve(state);
   const docsContent = context.length > 0
     ? context.map((doc) => doc.pageContent).join("\n")
     : "[NO RELEVANT DATA FOUND]";
@@ -160,5 +169,18 @@ const generate = async (state: State, options?: { skipTitle?: boolean }) => {
     messages: state.messages,
   };
 };
+
+/**
+ * Eval-only entry point: runs retrieve + generate and returns the answer
+ * alongside the actual retrieved context strings for RAGAS scoring.
+ */
+export async function generateForEval(
+  question: string
+): Promise<{ answer: string; contexts: string[] }> {
+  const state: State = { question, context: [], answer: "", messages: [] };
+  const { context } = await retrieve(state);
+  const result = await generate({ ...state, context }, { skipTitle: true });
+  return { answer: result.answer, contexts: context.map((d) => d.pageContent) };
+}
 
 export default generate;

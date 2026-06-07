@@ -7,8 +7,10 @@ requires-python = ">=3.12"
 dependencies = [
     "datasets>=4.1.0",
     "langchain-ollama>=0.3.8",
+    "langchain-core>=0.3",
     "pandas>=2.3.2",
-    "pypdf>=6.0.0",
+    "psycopg2-binary>=2.9",
+    "python-dotenv>=1.0",
     "ragas[metrics]>=0.3.5",
     "rapidfuzz>=3.14.1",
     "requests>=2.32.5",

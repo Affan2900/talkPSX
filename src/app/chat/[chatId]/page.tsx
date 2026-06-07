@@ -73,7 +73,7 @@ export default function ChatPage() {
     };
 
     fetchChatData();
-  }, [chatId]);
+  }, [chatId, isNewChat]);
 
   // Transform messages for ChatInterface
   const formattedMessages = chatMessages.map((msg) => ({

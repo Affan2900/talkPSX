@@ -8,7 +8,7 @@ type ClientChatTurn = { role: string; content: unknown };
 
 export async function POST(req: NextRequest) {
   try {
-    const { question, chat_history = [], chatId } = await req.json();
+    const { question, chat_history = [] } = await req.json();
 
     // Validate the question
     if (!question || typeof question !== "string") {
