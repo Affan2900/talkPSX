@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { User } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import Image from "next/image";
+import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 
 export interface ChatMessage {
@@ -80,14 +81,17 @@ export default function ChatMessageRow({
               : "bg-transparent px-0 py-1"
           )}
         >
-          <p
-            className={cn(
-              "text-base leading-relaxed",
-              isUser ? "text-foreground" : "text-slate-800"
-            )}
-          >
-            {message.content}
-          </p>
+          {isUser ? (
+            <p className="text-base leading-relaxed text-foreground">
+              {message.content}
+            </p>
+          ) : (
+            <ReactMarkdown
+              className="prose prose-sm max-w-none text-slate-800 prose-headings:font-semibold prose-headings:text-slate-900 prose-strong:text-slate-900 prose-a:text-green-700 prose-ul:my-1 prose-li:my-0"
+            >
+              {message.content}
+            </ReactMarkdown>
+          )}
         </div>
       </div>
     </motion.div>

@@ -26,6 +26,7 @@
     "@radix-ui/react-slot": "^1.1.2",
     "@supabase/postgrest-js": "^1.19.1",
     "@supabase/supabase-js": "^2.48.1",
+    "@tailwindcss/typography": "^0.5.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "d3-dsv": "^2.0.0",
@@ -40,6 +41,7 @@
     "postgres": "^3.4.5",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
+    "react-markdown": "^10.1.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7"
