@@ -1,7 +1,7 @@
-'use server'
+export const dynamic = 'force-dynamic';
 
-import generate from "@/lib/generate";
-import { NextResponse, NextRequest } from "next/server";
+import { generateStream } from "@/lib/generate";
+import { NextRequest } from "next/server";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { getDB } from "@/lib/db";
 import { messages, users } from "@/app/db/schema";
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const { question, chat_history = [], chatId, userId } = await req.json();
 
     if (!question || typeof question !== "string" || !chatId) {
-      return NextResponse.json(
+      return Response.json(
         { error: "Valid question and chatId are required" },
         { status: 400 }
       );
@@ -21,19 +21,13 @@ export async function POST(req: NextRequest) {
 
     const db = await getDB();
 
-    // Ensure AI user exists
     await db.insert(users)
       .values({ id: "ai", username: "AI Assistant" })
       .onConflictDoNothing();
 
-    // Save the user message before calling the LLM
     const senderId = userId ?? "anonymous";
     if (senderId !== "anonymous") {
-      await db.insert(messages).values({
-        chatId,
-        senderId,
-        content: question,
-      });
+      await db.insert(messages).values({ chatId, senderId, content: question });
     }
 
     const history: ClientChatTurn[] = Array.isArray(chat_history)
@@ -42,9 +36,7 @@ export async function POST(req: NextRequest) {
 
     const previousMessages = history.map((msg) => {
       const text = typeof msg.content === "string" ? msg.content : "";
-      return msg.role === "user"
-        ? new HumanMessage(text)
-        : new AIMessage(text);
+      return msg.role === "user" ? new HumanMessage(text) : new AIMessage(text);
     });
 
     const initialState = {
@@ -54,22 +46,46 @@ export async function POST(req: NextRequest) {
       messages: previousMessages,
     };
 
-    // Skip title generation for follow-up messages — cuts response time in half
-    const { answer } = await generate(initialState, { skipTitle: true });
+    const encoder = new TextEncoder();
+    let fullAnswer = "";
 
-    // Save the AI response
-    const newMessage = await db.insert(messages).values({
-      chatId,
-      senderId: "ai",
-      content: answer,
-    }).returning();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          const gen = generateStream(initialState, { skipTitle: true });
+          while (true) {
+            const { value, done } = await gen.next();
+            if (done) {
+              const result = value as { fullAnswer: string; title: string } | undefined;
+              if (result) fullAnswer = result.fullAnswer;
+              break;
+            }
+            if (typeof value === "string") {
+              controller.enqueue(encoder.encode(value));
+            }
+          }
+          // No title needed for follow-up messages — just close cleanly
+        } finally {
+          controller.close();
+        }
 
-    return NextResponse.json({ answer, savedMessage: newMessage });
+        await db.insert(messages).values({
+          chatId,
+          senderId: "ai",
+          content: fullAnswer,
+        });
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "no-cache",
+      },
+    });
   } catch (error) {
     console.error("API Error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

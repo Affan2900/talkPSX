@@ -19,6 +19,7 @@ export default function ChatPage() {
   const { chatId } = useParams();
   const searchParams = useSearchParams();
   const isNewChat = searchParams.get("new") === "1";
+  const initialQuestion = searchParams.get("q") ?? undefined;
 
   useEffect(() => {
     const fetchChatData = async () => {
@@ -110,10 +111,11 @@ export default function ChatPage() {
           </div>
         ) : (
           typeof chatId === "string" && (
-            <ChatInterface 
-              initialMessages={formattedMessages} 
-              chatId={chatId} 
+            <ChatInterface
+              initialMessages={formattedMessages}
+              chatId={chatId}
               isLocal={chatId.startsWith("local-")}
+              initialQuestion={initialQuestion}
             />
           )
         )}

@@ -49,9 +49,9 @@ const TONE_LINES: Record<string, string> = {
 
 function parseMaxSentences(): number {
   const raw = process.env.CHAT_MAX_SENTENCES?.trim();
-  if (!raw) return 3;
+  if (!raw) return 5;
   const n = parseInt(raw, 10);
-  return Number.isFinite(n) && n > 0 ? n : 3;
+  return Number.isFinite(n) && n > 0 ? n : 5;
 }
 
 function buildDefaultPrompt(): string {

@@ -85,38 +85,9 @@ export default function Hero({ sidebarOpen = false }: HeroProps) {
     if (!query.trim()) return;
 
     if (!user) {
-      setLoading(true);
-      try {
-        const localChatId = "local-" + crypto.randomUUID();
-        
-        const response = await fetch(`/api/chat/local`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: query, chatId: localChatId }),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          const aiResponse = data.answer.replace(/^"|"$/g, "");
-
-          // Prepare messages array and store in sessionStorage
-          const initialMessages = [
-            { id: `${Date.now()}`, content: query, senderId: "user" },
-            { id: `${Date.now() + 1}`, content: aiResponse, senderId: "ai" }
-          ];
-          sessionStorage.setItem(`chat_${localChatId}`, JSON.stringify(initialMessages));
-
-          router.push(`/chat/${localChatId}`);
-        } else {
-          toast.error(data.error || "Something went wrong. Please try again.");
-        }
-      } catch (error) {
-        toast.error("Failed to reach the server. Please try again.");
-        console.error("API Error:", error);
-      } finally {
-        setLoading(false);
-      }
+      // Redirect immediately — chat page handles the LLM call
+      const localChatId = "local-" + crypto.randomUUID();
+      router.push(`/chat/${localChatId}?q=${encodeURIComponent(query)}&new=1`);
       setQuery("");
       return;
     }
@@ -124,46 +95,19 @@ export default function Hero({ sidebarOpen = false }: HeroProps) {
     setLoading(true);
 
     try {
-      // Use an API route to create a chat and messages instead of direct DB access
       const createChatResponse = await fetch(`/api/user/${user.id}/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          userId: user.id,
-          message: query 
-        }),
+        body: JSON.stringify({ userId: user.id, message: query }),
       });
 
       const chatData = await createChatResponse.json();
-      
-      
       if (!createChatResponse.ok) {
         throw new Error(chatData.error || "Failed to create chat");
       }
 
-      const chatId = chatData.chatId;
-      
-
-      // Get the answer from your existing chat API
-      const response = await fetch(`/api/chat/${chatId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: query, chatId }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        await fetch(`/api/chat/${chatId}/update`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: data.title }),
-        });
-
-        router.push(`/chat/${chatId}`);
-      } else {
-        toast.error(data.error || "Something went wrong. Please try again.");
-      }
+      // Redirect immediately — chat page handles the LLM call
+      router.push(`/chat/${chatData.chatId}?q=${encodeURIComponent(query)}&new=1`);
     } catch (error) {
       toast.error("Failed to reach the server. Please try again.");
       console.error("API Error:", error);

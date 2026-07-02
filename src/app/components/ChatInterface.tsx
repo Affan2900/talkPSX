@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ChatMessageRow, {
@@ -13,40 +13,44 @@ interface ChatInterfaceProps {
   initialMessages: ChatMessage[];
   chatId: string;
   isLocal?: boolean;
+  initialQuestion?: string;
 }
+
+const TITLE_PREFIX = "\n[TITLE]:";
 
 export default function ChatInterface({
   initialMessages,
   chatId,
   isLocal,
+  initialQuestion,
 }: ChatInterfaceProps) {
   const { user } = useUser();
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const autoSubmittedRef = useRef(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
+  const submitQuestion = useCallback(async (question: string) => {
+    if (!question.trim()) return;
 
     setIsLoading(true);
 
     const userMessage: ChatMessage = {
       id: `${Date.now()}`,
-      content: input,
+      content: question,
       sender: "user",
     };
 
-    const question = input;
     const updatedMessages = [...messages, userMessage];
-
     setMessages(updatedMessages);
-    setInput("");
+
+    const aiMsgId = `${Date.now() + 1}`;
 
     try {
-      const url = isLocal 
-        ? `/api/chat/local` 
+      const url = isLocal
+        ? `/api/chat/local`
         : `/api/chat/${chatId}/message/create`;
 
       const response = await fetch(url, {
@@ -54,7 +58,6 @@ export default function ChatInterface({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           question,
-          // Map sender→role so the API can correctly classify history messages
           chat_history: updatedMessages.map((m) => ({
             role: m.sender,
             content: m.content,
@@ -64,35 +67,76 @@ export default function ChatInterface({
         }),
       });
 
-      const data = await response.json();
+      if (!response.ok || !response.body) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error ?? "Server error");
+      }
 
-      if (response.ok) {
-        const aiMessage: ChatMessage = {
-          id: `${Date.now() + 1}`,
-          content: data.answer.replace(/^"|"$/g, ""),
-          sender: "ai",
-        };
-        const newMessages = [...updatedMessages, aiMessage];
-        setMessages(newMessages);
-        
-        if (isLocal) {
-          sessionStorage.setItem(`chat_${chatId}`, JSON.stringify(newMessages));
-        }
-      } else {
-        console.error("Error:", data.error);
+      setMessages((prev) => [...prev, { id: aiMsgId, content: "", sender: "ai" }]);
+      setIsLoading(false);
+      setIsStreaming(true);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += decoder.decode(value, { stream: true });
+
+        const titleIdx = accumulated.indexOf(TITLE_PREFIX);
+        const display = titleIdx !== -1 ? accumulated.slice(0, titleIdx) : accumulated;
+
+        setMessages((prev) =>
+          prev.map((m) => (m.id === aiMsgId ? { ...m, content: display } : m))
+        );
+      }
+
+      const titleIdx = accumulated.indexOf(TITLE_PREFIX);
+      const finalAnswer = titleIdx !== -1 ? accumulated.slice(0, titleIdx) : accumulated;
+
+      setMessages((prev) =>
+        prev.map((m) => (m.id === aiMsgId ? { ...m, content: finalAnswer } : m))
+      );
+
+      if (isLocal) {
+        const allMessages = [
+          ...updatedMessages,
+          { id: aiMsgId, content: finalAnswer, sender: "ai" as const },
+        ];
+        sessionStorage.setItem(`chat_${chatId}`, JSON.stringify(allMessages));
       }
     } catch (error) {
       console.error("Failed to fetch response:", error);
+      setMessages((prev) => prev.filter((m) => m.id !== aiMsgId));
     } finally {
       setIsLoading(false);
+      setIsStreaming(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatId, isLocal, user?.id]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    const question = input;
+    setInput("");
+    await submitQuestion(question);
   };
 
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
-  }, [messages, isLoading]);
+  }, [messages, isLoading, isStreaming]);
+
+  // Auto-submit the initial question coming from the home page redirect
+  useEffect(() => {
+    if (!initialQuestion || autoSubmittedRef.current) return;
+    autoSubmittedRef.current = true;
+    submitQuestion(initialQuestion);
+  }, [initialQuestion, submitQuestion]);
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-slate-50">
@@ -118,7 +162,7 @@ export default function ChatInterface({
         input={input}
         onInputChange={setInput}
         onSubmit={handleSubmit}
-        disabled={isLoading}
+        disabled={isLoading || isStreaming}
       />
     </div>
   );

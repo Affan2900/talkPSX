@@ -1,7 +1,7 @@
-'use server'
+export const dynamic = 'force-dynamic';
 
-import generate from "@/lib/generate";
-import { NextResponse, NextRequest } from "next/server";
+import { generateStream } from "@/lib/generate";
+import { NextRequest } from "next/server";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { getDB } from "@/lib/db";
 import { messages } from "@/app/db/schema";
@@ -12,63 +12,77 @@ export async function POST(req: NextRequest) {
   try {
     const { question, chat_history = [], chatId } = await req.json();
 
-    // Validate the question
     if (!question || typeof question !== "string" || !chatId) {
-      return NextResponse.json(
+      return Response.json(
         { error: "Valid question and chatId are required" },
         { status: 400 }
       );
     }
 
-    const db = await getDB();
-
     const history: ClientChatTurn[] = Array.isArray(chat_history)
       ? (chat_history as ClientChatTurn[])
       : [];
 
-    // Convert chat history to BaseMessage format
     const previousMessages = history.map((msg) => {
       const text = typeof msg.content === "string" ? msg.content : "";
-      return msg.role === "user"
-        ? new HumanMessage(text)
-        : new AIMessage(text);
+      return msg.role === "user" ? new HumanMessage(text) : new AIMessage(text);
     });
 
-    // Construct the complete state object
     const initialState = {
       question: question.trim(),
-      context: [],    // Will be filled by retrieve()
-      answer: "",     // Will be filled by generate()
-      messages: previousMessages // Converted chat history
+      context: [],
+      answer: "",
+      messages: previousMessages,
     };
 
-    // Process the question through the AI pipeline
-    const { answer, title, messages: updatedMessages } = await generate(initialState);
+    const encoder = new TextEncoder();
+    let fullAnswer = "";
+    let title = "";
 
-    // Convert messages back to client-safe format
-    const formattedMessages = updatedMessages.map(msg => ({
-      role: msg._getType(),
-      content: msg.content
-    }));
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          const gen = generateStream(initialState);
+          while (true) {
+            const { value, done } = await gen.next();
+            if (done) {
+              // Generator return value carries fullAnswer + title
+              const result = value as { fullAnswer: string; title: string } | undefined;
+              if (result) {
+                fullAnswer = result.fullAnswer;
+                title = result.title;
+              }
+              break;
+            }
+            if (typeof value === "string") {
+              controller.enqueue(encoder.encode(value));
+            }
+          }
+          // Append title as a parseable suffix
+          controller.enqueue(encoder.encode(`\n[TITLE]:${title}`));
+        } finally {
+          controller.close();
+        }
 
-    // Save AI response to database
-    const newMessage = await db.insert(messages).values({
-      chatId,
-      senderId: "ai",
-      content: answer,
-    }).returning();
+        // Save AI response to DB after stream closes
+        const db = await getDB();
+        await db.insert(messages).values({
+          chatId,
+          senderId: "ai",
+          content: fullAnswer,
+        });
+      },
+    });
 
-    return NextResponse.json({ 
-      answer,
-      title,
-      messages: formattedMessages,
-      savedMessage: newMessage
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "no-cache",
+      },
     });
   } catch (error) {
     console.error("API Error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
