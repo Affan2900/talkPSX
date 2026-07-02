@@ -53,6 +53,8 @@ TODAY = date.today().isoformat()
 _DIMS: dict[str, int] = {
     "nomic-embed-text:latest": 768,
     "nomic-embed-text":        768,
+    "all-minilm":              384,
+    "all-minilm:latest":       384,
     "sentence-transformers/all-MiniLM-L6-v2": 384,
 }
 if EMBEDDING_PROVIDER == "huggingface":

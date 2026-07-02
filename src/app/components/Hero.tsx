@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Spinner } from "@/components/ui/spinner"
+import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
 
 const texts = [
   "Insights and Trends for PSX Companies",
@@ -23,7 +24,6 @@ export default function Hero({ sidebarOpen = false }: HeroProps) {
   const router = useRouter();
   const { user } = useUser();
   const [query, setQuery] = useState("");
-  const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -86,7 +86,6 @@ export default function Hero({ sidebarOpen = false }: HeroProps) {
 
     if (!user) {
       setLoading(true);
-      setAnswer("");
       try {
         const localChatId = "local-" + crypto.randomUUID();
         
@@ -100,7 +99,6 @@ export default function Hero({ sidebarOpen = false }: HeroProps) {
 
         if (response.ok) {
           const aiResponse = data.answer.replace(/^"|"$/g, "");
-          setAnswer(aiResponse);
 
           // Prepare messages array and store in sessionStorage
           const initialMessages = [
@@ -111,10 +109,10 @@ export default function Hero({ sidebarOpen = false }: HeroProps) {
 
           router.push(`/chat/${localChatId}`);
         } else {
-          setAnswer("Error: " + data.error);
+          toast.error(data.error || "Something went wrong. Please try again.");
         }
       } catch (error) {
-        setAnswer("Failed to fetch response.");
+        toast.error("Failed to reach the server. Please try again.");
         console.error("API Error:", error);
       } finally {
         setLoading(false);
@@ -124,7 +122,6 @@ export default function Hero({ sidebarOpen = false }: HeroProps) {
     }
 
     setLoading(true);
-    setAnswer("");
 
     try {
       // Use an API route to create a chat and messages instead of direct DB access
@@ -157,34 +154,18 @@ export default function Hero({ sidebarOpen = false }: HeroProps) {
       const data = await response.json();
 
       if (response.ok) {
-        setAnswer(data.answer.replace(/^"|"$/g, ""));
-
-        // // Save the AI response through an API route
-        // await fetch("/api/chat/message", {
-        //   method: "POST",
-        //   headers: { "Content-Type": "application/json" },
-        //   body: JSON.stringify({
-        //     chatId,
-        //     senderId: null, // null for AI
-        //     content: data.answer
-        //   }),
-        // });
-
-
         await fetch(`/api/chat/${chatId}/update`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: data.title
-          })
-        })    
+          body: JSON.stringify({ title: data.title }),
+        });
 
         router.push(`/chat/${chatId}`);
       } else {
-        setAnswer("Error: " + data.error);
+        toast.error(data.error || "Something went wrong. Please try again.");
       }
     } catch (error) {
-      setAnswer("Failed to fetch response.");
+      toast.error("Failed to reach the server. Please try again.");
       console.error("API Error:", error);
     } finally {
       setLoading(false);
@@ -255,16 +236,6 @@ export default function Hero({ sidebarOpen = false }: HeroProps) {
           </div>
         </motion.form>
 
-        {answer && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mt-8 bg-gray-100 p-6 rounded-xl shadow-lg max-w-4xl text-lg text-green-900"
-          >
-            <strong>Answer:</strong> {answer}
-          </motion.div>
-        )}
     </div>
   );
 }

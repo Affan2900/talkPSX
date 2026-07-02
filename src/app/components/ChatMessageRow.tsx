@@ -57,7 +57,7 @@ export default function ChatMessageRow({
     >
       {/* Avatar: user side only */}
       {isUser && (
-        <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full md:h-12 md:w-12">
+        <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-full md:h-12 md:w-12">
           <UserAvatar />
         </div>
       )}

@@ -1,4 +1,3 @@
-import { ChatOllama } from "@langchain/ollama";
 import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { Document } from "@langchain/core/documents";
@@ -6,7 +5,7 @@ import { Annotation } from "@langchain/langgraph";
 import {  BaseMessage } from "@langchain/core/messages";
 import { resolveEmbeddings } from "@/lib/embeddingProvider";
 import { databaseUrlToPgConfig } from "@/lib/databaseUrlToPgConfig";
-import { resolveOllamaBaseUrl, resolveOllamaChatModel } from "@/lib/ollamaEnv";
+import { resolveChatModel } from "@/lib/chatProvider";
 import { detectLiveQuoteSymbol } from "@/lib/liveQuoteDetect";
 import { fetchLiveQuote } from "@/lib/quoteService";
 import { resolveChatSystemPrompt } from "@/lib/prompts/chatSystemPrompt";
@@ -42,11 +41,12 @@ function getVectorStore() {
   return vectorStorePromise;
 }
 
-// Main LLM: OLLAMA_CHAT_MODEL or OLLAMA_MODEL (default deepseek-r1:1.5b)
-const chatModel = new ChatOllama({
-  baseUrl: resolveOllamaBaseUrl(),
-  model: resolveOllamaChatModel(),
-});
+// Lazy-init: avoids constructing the chat client during Vercel build.
+let _chatModel: ReturnType<typeof resolveChatModel> | null = null;
+function getChatModel() {
+  if (!_chatModel) _chatModel = resolveChatModel();
+  return _chatModel;
+}
 
 // Define the prompt template (system message from resolveChatSystemPrompt)
 const promptTemplate = ChatPromptTemplate.fromMessages([
@@ -148,7 +148,7 @@ const generate = async (state: State, options?: { skipTitle?: boolean }) => {
     chat_history: chatHistory,
   });
 
-  const response = await chatModel.invoke(formattedMessages);
+  const response = await getChatModel().invoke(formattedMessages);
 
   const cleanedAnswer = stripThinkingBlocks(
     normalizeMessageContent(response.content)
@@ -159,7 +159,7 @@ const generate = async (state: State, options?: { skipTitle?: boolean }) => {
     const titleMessages = await titlePromptTemplate.invoke({
       conversation: `Question: ${state.question}\nAnswer: ${cleanedAnswer}`,
     });
-    const titleResponse = await chatModel.invoke(titleMessages);
+    const titleResponse = await getChatModel().invoke(titleMessages);
     title = sanitizeChatTitle(titleResponse.content, state.question);
   }
 
