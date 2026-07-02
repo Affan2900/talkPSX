@@ -86,11 +86,9 @@ export default function ChatMessageRow({
               {message.content}
             </p>
           ) : (
-            <ReactMarkdown
-              className="prose prose-sm max-w-none text-slate-800 prose-headings:font-semibold prose-headings:text-slate-900 prose-strong:text-slate-900 prose-a:text-green-700 prose-ul:my-1 prose-li:my-0"
-            >
-              {message.content}
-            </ReactMarkdown>
+            <div className="prose prose-sm max-w-none text-slate-800 prose-headings:font-semibold prose-headings:text-slate-900 prose-strong:text-slate-900 prose-a:text-green-700 prose-ul:my-1 prose-li:my-0">
+              <ReactMarkdown>{message.content}</ReactMarkdown>
+            </div>
           )}
         </div>
       </div>
