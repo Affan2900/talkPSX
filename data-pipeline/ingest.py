@@ -45,6 +45,9 @@ HF_EMBEDDING_MODEL  = os.getenv("HUGGINGFACE_EMBEDDING_MODEL", "sentence-transfo
 # Ollama (used when EMBEDDING_PROVIDER=ollama)
 OLLAMA_BASE_URL     = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL        = os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text:latest")
+# Jina (used when EMBEDDING_PROVIDER=jina)
+JINA_API_KEY        = os.getenv("JINA_API_KEY", "")
+JINA_MODEL          = os.getenv("JINA_EMBEDDING_MODEL", "jina-embeddings-v2-base-en")
 
 TABLE = "psx_kse100"
 TODAY = date.today().isoformat()
@@ -56,9 +59,12 @@ _DIMS: dict[str, int] = {
     "all-minilm":              384,
     "all-minilm:latest":       384,
     "sentence-transformers/all-MiniLM-L6-v2": 384,
+    "jina-embeddings-v2-base-en":  768,
 }
 if EMBEDDING_PROVIDER == "huggingface":
     VECTOR_DIM = _DIMS.get(HF_EMBEDDING_MODEL, 384)
+elif EMBEDDING_PROVIDER == "jina":
+    VECTOR_DIM = _DIMS.get(JINA_MODEL, 512)
 else:
     VECTOR_DIM = _DIMS.get(OLLAMA_MODEL, 768)
 
@@ -67,6 +73,9 @@ if EMBEDDING_PROVIDER == "huggingface":
     if not HF_API_KEY:
         raise EnvironmentError("HUGGINGFACE_API_KEY is required when EMBEDDING_PROVIDER=huggingface")
     hf = InferenceClient(token=HF_API_KEY)
+
+if EMBEDDING_PROVIDER == "jina" and not JINA_API_KEY:
+    raise EnvironmentError("JINA_API_KEY is required when EMBEDDING_PROVIDER=jina")
 
 
 # ---------------------------------------------------------------------------
@@ -90,6 +99,18 @@ def _embed_huggingface(text: str, retries: int = 3) -> list[float]:
     raise RuntimeError("HuggingFace embedding failed after all retries")
 
 
+def _embed_jina(text: str) -> list[float]:
+    resp = requests.post(
+        "https://api.jina.ai/v1/embeddings",
+        headers={"Authorization": f"Bearer {JINA_API_KEY}", "Content-Type": "application/json"},
+        json={"model": JINA_MODEL, "input": [{"text": text}]},
+        timeout=30,
+    )
+    if not resp.ok:
+        raise RuntimeError(f"Jina error {resp.status_code}: {resp.text}")
+    return resp.json()["data"][0]["embedding"]
+
+
 def _embed_ollama(text: str) -> list[float]:
     resp = requests.post(
         f"{OLLAMA_BASE_URL}/api/embeddings",
@@ -103,6 +124,8 @@ def _embed_ollama(text: str) -> list[float]:
 def embed(text: str) -> list[float]:
     if EMBEDDING_PROVIDER == "huggingface":
         return _embed_huggingface(text)
+    if EMBEDDING_PROVIDER == "jina":
+        return _embed_jina(text)
     return _embed_ollama(text)
 
 
@@ -251,7 +274,7 @@ def build_sector_doc(row: dict) -> tuple[str, dict]:
 # ---------------------------------------------------------------------------
 
 def run(force: bool = False, dry_run: bool = False) -> None:
-    model_label = HF_EMBEDDING_MODEL if EMBEDDING_PROVIDER == "huggingface" else OLLAMA_MODEL
+    model_label = HF_EMBEDDING_MODEL if EMBEDDING_PROVIDER == "huggingface" else JINA_MODEL if EMBEDDING_PROVIDER == "jina" else OLLAMA_MODEL
     print(f"[{TODAY}] PSX KSE-100 ingestion — mode: {'force' if force else 'dry-run' if dry_run else 'incremental'} | embeddings: {EMBEDDING_PROVIDER} ({model_label})")
 
     # 1. Fetch index constituents + sector summaries
@@ -325,7 +348,7 @@ def run(force: bool = False, dry_run: bool = False) -> None:
         return
 
     # 5. Embed
-    model_name = HF_EMBEDDING_MODEL if EMBEDDING_PROVIDER == "huggingface" else OLLAMA_MODEL
+    model_name = HF_EMBEDDING_MODEL if EMBEDDING_PROVIDER == "huggingface" else JINA_MODEL if EMBEDDING_PROVIDER == "jina" else OLLAMA_MODEL
     print(f"  Generating embeddings via {EMBEDDING_PROVIDER} ({model_name})...")
     rows: list[tuple] = []
     for i, (text, meta) in enumerate(docs, 1):
