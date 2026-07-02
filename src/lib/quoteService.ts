@@ -1,13 +1,8 @@
 interface QuoteData {
-  symbol?: string;
-  sector?: string;
-  listed_in?: string;
+  symbol: string;
   price?: number;
   change?: number;
   change_pct?: number;
-  pe_ratio?: number;
-  dividend_yield?: number;
-  market_cap?: number;
   [key: string]: unknown;
 }
 
@@ -26,33 +21,39 @@ function formatQuoteContext(symbol: string, q: QuoteData): string {
   return [
     `[LIVE DATA — real-time, takes priority over stored context for current price]`,
     `Stock: ${symbol}`,
-    q.sector   ? `Sector: ${q.sector}`                          : null,
-    q.price    ? `Price: PKR ${fmt(q.price)}`                   : null,
+    q.price ? `Price: PKR ${fmt(q.price)}` : null,
     `Change: ${changeStr}`,
-    q.pe_ratio        ? `P/E Ratio: ${fmt(q.pe_ratio)}`         : null,
-    q.dividend_yield  ? `Dividend Yield: ${fmt(q.dividend_yield)}%` : null,
-    q.market_cap      ? `Market Cap: PKR ${q.market_cap.toLocaleString()}M` : null,
   ]
     .filter(Boolean)
     .join("\n");
 }
 
 /**
- * Fetches a live quote from the Python Quote API and returns it as a
- * formatted context string ready for the LLM prompt.
- * Returns null if the API is unreachable — vector store is used instead.
+ * Fetches a live quote from Yahoo Finance (no API key required).
+ * PSX symbols use the .KA suffix on Yahoo Finance (e.g. ENGRO.KA).
+ * Returns null if the symbol is not found or the request fails.
  */
 export async function fetchLiveQuote(symbol: string): Promise<string | null> {
-  const base = process.env.QUOTE_API_URL?.trim() || "http://localhost:8001";
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}.KA?interval=1d&range=1d`;
   try {
-    const res = await fetch(`${base}/quote/${encodeURIComponent(symbol)}`, {
+    const res = await fetch(url, {
       cache: "no-store",
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+      },
     });
     if (!res.ok) return null;
-    const data: QuoteData = await res.json();
-    return formatQuoteContext(symbol, data);
+    const json = await res.json();
+    const meta = json?.chart?.result?.[0]?.meta;
+    if (!meta?.regularMarketPrice) return null;
+
+    const price: number = meta.regularMarketPrice;
+    const prev: number | undefined = meta.chartPreviousClose;
+    const change = prev != null ? price - prev : undefined;
+    const change_pct = prev != null ? ((price - prev) / prev) * 100 : undefined;
+
+    return formatQuoteContext(symbol, { symbol, price, change, change_pct });
   } catch {
-    // API not running (e.g. Lambda cold-start or local dev without quote-api)
     return null;
   }
 }
