@@ -2,7 +2,7 @@
 
 **🔗 Live: [https://talk-psx.vercel.app/](https://talk-psx.vercel.app/)**
 
-**Your AI-powered companion for Pakistan's stock market.** Ask questions in plain English and get real-time insights, company financials, and trend analysis for PSX-listed companies — no spreadsheets required.
+**Your AI-powered companion for Pakistan's stock market.** Ask questions in plain English and get real-time insights, company financials, and trend analysis for PSX-listed companies.
 
 ---
 
