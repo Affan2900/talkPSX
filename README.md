@@ -1,5 +1,7 @@
 # Talk PSX
 
+**🔗 Live: [https://talk-psx.vercel.app/](https://talk-psx.vercel.app/)**
+
 **Your AI-powered companion for Pakistan's stock market.** Ask questions in plain English and get real-time insights, company financials, and trend analysis for PSX-listed companies — no spreadsheets required.
 
 ---
@@ -12,7 +14,7 @@ Talk PSX is a conversational AI that knows the Pakistan Stock Exchange inside ou
 - *"Give me a financial overview of OGDC."*
 - *"Which KSE-100 companies have the highest free float?"*
 
-It retrieves relevant context from a live vector store of PSX company data and generates grounded, accurate answers using a local LLM.
+It retrieves relevant context from a live vector store of PSX company data and generates grounded, accurate answers using a local (Ollama) or cloud (Groq) LLM.
 
 ---
 
@@ -36,18 +38,23 @@ It retrieves relevant context from a live vector store of PSX company data and g
 - **Drizzle ORM** + **Supabase (PostgreSQL)** for chat/user persistence
 
 ### AI Pipeline
-- **LangChain + LangGraph** for the RAG (Retrieve → Generate) pipeline
-- **Ollama** for local LLM inference (no API keys needed for the core model)
+- **LangChain + LangGraph** for the RAG (Retrieve → Generate) pipeline, with streaming token-by-token responses
+- **Pluggable chat model** (`src/lib/chatProvider.ts`), switchable via `CHAT_PROVIDER`:
+  - **Ollama** (default) — local inference, no API keys needed
+  - **Groq** — cloud inference via `@langchain/groq` for fast, hosted LLM calls (e.g. `llama-3.1-8b-instant`)
+  - **Jina AI** — hosted embeddings API
 - **PGVector** (Supabase) for semantic vector search over company embeddings
-- **nomic-embed-text** for embedding generation
+- Responses are rendered as **Markdown** on the frontend (`react-markdown`)
 
 ### Data Pipeline (`/data-pipeline`)
 - **Python + uv** — fetches PSX company symbols, financials, and descriptions from the PSX API
 - **DistilBART** (HuggingFace) to summarize raw company profiles
 - **ingest.py** — chunks, embeds, and loads everything into PGVector
+- **GitHub Actions cron** (`.github/workflows/ingest.yml`) — runs `ingest.py` automatically once a day (12:00 UTC, after PSX market close) to keep the vector store fresh, via `uv run python ingest.py`. Can also be triggered manually from the Actions tab (`workflow_dispatch`). Requires `DATABASE_URL` and `JINA_API_KEY` set as repo secrets (Settings → Secrets and variables → Actions)
 
-### Live Quote API
-- **FastAPI** server (`npm run quote-api`) — serves real-time stock price lookups to the Next.js backend
+### Live Quotes
+- Real-time prices are fetched directly from **Yahoo Finance** (`src/lib/quoteService.ts`) — no API key or separate server required
+- `src/lib/liveQuoteDetect.ts` detects price-related questions naming a KSE-100 symbol and injects the live quote into the RAG context, taking priority over stored data
 
 ### Evaluation (`/evaluation`)
 - **RAGAS** framework measuring LLM Context Recall, Faithfulness, and Factual Correctness
@@ -60,7 +67,7 @@ It retrieves relevant context from a live vector store of PSX company data and g
 ### Prerequisites
 - Node.js 20+
 - Python 3.11+ with [uv](https://github.com/astral-sh/uv)
-- [Ollama](https://ollama.com) running locally with your chosen chat + embedding models
+- Either [Ollama](https://ollama.com) running locally with your chosen chat + embedding models, **or** a [Groq](https://console.groq.com) API key (and/or a Jina/HuggingFace API key for hosted embeddings)
 - Supabase project with PGVector extension enabled
 
 ### 1. Install dependencies
@@ -83,10 +90,22 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 CLERK_SECRET_KEY=your_clerk_secret_key
 
-# Ollama
+# Ollama (default provider — local inference)
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_CHAT_MODEL=your_preferred_model        # e.g. llama3.1:8b
 OLLAMA_EMBEDDING_MODEL=nomic-embed-text:latest
+
+# Chat provider — "ollama" (default) or "groq"
+CHAT_PROVIDER=ollama
+GROQ_API_KEY=your_groq_api_key                # required if CHAT_PROVIDER=groq
+GROQ_MODEL=llama-3.1-8b-instant               # optional, this is the default
+
+# Embedding provider — "ollama" (default), "jina", or "huggingface"
+EMBEDDING_PROVIDER=ollama
+JINA_API_KEY=your_jina_api_key                # required if EMBEDDING_PROVIDER=jina
+JINA_EMBEDDING_MODEL=jina-embeddings-v2-base-en
+HUGGINGFACE_API_KEY=your_huggingface_api_key  # required if EMBEDDING_PROVIDER=huggingface
+HUGGINGFACE_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
 ```
 
 ### 3. Ingest PSX data
@@ -100,38 +119,16 @@ npm run ingest
 ### 4. Start the dev server
 
 ```bash
-# Terminal 1 — Next.js app
 npm run dev
-
-# Terminal 2 — Live quote API (optional, for real-time prices)
-npm run quote-api
 ```
+
+Live quotes are fetched directly from Yahoo Finance at request time, so no separate quote server is needed.
 
 Open [http://localhost:3000](http://localhost:3000) and start asking questions.
 
 ---
 
-## Project Structure
 
-```
-talk-psx/
-├── src/
-│   ├── app/
-│   │   ├── api/          # Next.js API routes (chat, user, eval, quotes)
-│   │   ├── chat/         # Chat page ([chatId])
-│   │   ├── components/   # UI components (Hero, ChatInterface, Sidebar, ...)
-│   │   ├── db/           # Drizzle schema
-│   │   └── page.tsx      # Landing page
-│   └── lib/
-│       ├── generate.ts         # LangGraph RAG pipeline
-│       ├── createEmbeddings.ts # Startup embedding loader
-│       ├── quoteService.ts     # Live quote lookups
-│       └── ...
-├── data-pipeline/        # Python pipeline — fetch, summarize, ingest
-└── evaluation/           # RAGAS evaluation suite
-```
-
----
 
 ## Evaluation
 
