@@ -43,7 +43,11 @@ It retrieves relevant context from a live vector store of PSX company data and g
   - **Ollama** (default) — local inference, no API keys needed
   - **Groq** — cloud inference via `@langchain/groq` for fast, hosted LLM calls (e.g. `llama-3.1-8b-instant`)
   - **Jina AI** — hosted embeddings API
-- **PGVector** (Supabase) for semantic vector search over company embeddings
+- **Hybrid search** over the PGVector store (`src/lib/hybridRetrieve.ts`) — three lanes ranked in a single query and combined with **Reciprocal Rank Fusion**:
+  - *vector* — cosine ANN over the embeddings (semantic similarity)
+  - *keyword* — Postgres full-text search for exact word matching, restricted to terms rare enough to discriminate (see `HYBRID_MAX_DF` below)
+  - *symbol* — direct match on any PSX ticker named in the question
+  - Set `RETRIEVAL_MODE=vector` to fall back to pure semantic search
 - Responses are rendered as **Markdown** on the frontend (`react-markdown`)
 
 ### Data Pipeline (`/data-pipeline`)
@@ -106,6 +110,18 @@ JINA_API_KEY=your_jina_api_key                # required if EMBEDDING_PROVIDER=j
 JINA_EMBEDDING_MODEL=jina-embeddings-v2-base-en
 HUGGINGFACE_API_KEY=your_huggingface_api_key  # required if EMBEDDING_PROVIDER=huggingface
 HUGGINGFACE_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+
+# Retrieval — all optional, defaults shown
+RETRIEVAL_MODE=hybrid          # "hybrid" (default) or "vector" to disable hybrid search
+RAG_TOP_K=6                    # documents passed to the LLM as context
+RAG_SCORE_THRESHOLD=0.5        # max cosine distance, applied within the vector lane
+HYBRID_LANE_K=20               # candidates each lane contributes to fusion
+HYBRID_RRF_K=60                # RRF smoothing constant
+HYBRID_MAX_DF=0.3              # ignore keyword terms appearing in >30% of documents
+HYBRID_WEIGHT_VECTOR=1.0
+HYBRID_WEIGHT_KEYWORD=1.0
+HYBRID_WEIGHT_SYMBOL=2.0       # a named ticker is the highest-precision signal
+HYBRID_DEBUG=0                 # set to 1 to log per-lane ranks for each query
 ```
 
 ### 3. Ingest PSX data
@@ -115,6 +131,19 @@ Fetch company data from the PSX API and load it into PGVector:
 ```bash
 npm run ingest
 ```
+
+### 3b. Enable hybrid search on an existing database
+
+`ingest.py` creates the full-text index automatically, so a fresh database needs
+nothing extra. A database that predates hybrid search needs the migration once:
+
+```bash
+psql "$DATABASE_URL" -f data-pipeline/migrations/0001_hybrid_search.sql
+```
+
+It adds a generated `tsvector` column plus two indexes. Nothing is re-embedded
+and no rows are rewritten by hand — Postgres backfills and maintains the column
+itself. The statements are idempotent, so re-running is harmless.
 
 ### 4. Start the dev server
 

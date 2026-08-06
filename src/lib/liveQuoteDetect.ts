@@ -1,4 +1,4 @@
-import { KSE100_SYMBOLS } from "@/lib/kse100Symbols";
+import { extractSymbols } from "@/lib/symbolExtract";
 
 const PRICE_KEYWORDS = [
   "price", "trading", "current", "right now", "today", "rate",
@@ -11,7 +11,7 @@ const PRICE_KEYWORDS = [
  *
  * Detection requires BOTH:
  *   1. A price-related keyword in the question
- *   2. A known KSE-100 symbol mentioned (case-insensitive)
+ *   2. A known KSE-100 symbol mentioned (see `extractSymbols`)
  */
 export function detectLiveQuoteSymbol(question: string): string | null {
   const lower = question.toLowerCase();
@@ -19,16 +19,5 @@ export function detectLiveQuoteSymbol(question: string): string | null {
   const hasKeyword = PRICE_KEYWORDS.some((k) => lower.includes(k));
   if (!hasKeyword) return null;
 
-  // Check for explicit uppercase ticker (e.g. "ENGRO", "MCB")
-  const upperTokens = question.match(/\b[A-Z]{2,6}\b/g) ?? [];
-  for (const token of upperTokens) {
-    if (KSE100_SYMBOLS.has(token)) return token;
-  }
-
-  // Check for lowercase/mixed mention (e.g. "engro", "Luck")
-  for (const symbol of KSE100_SYMBOLS) {
-    if (lower.includes(symbol.toLowerCase())) return symbol;
-  }
-
-  return null;
+  return extractSymbols(question)[0] ?? null;
 }

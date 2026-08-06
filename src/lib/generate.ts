@@ -8,6 +8,7 @@ import { databaseUrlToPgConfig } from "@/lib/databaseUrlToPgConfig";
 import { resolveChatModel } from "@/lib/chatProvider";
 import { detectLiveQuoteSymbol } from "@/lib/liveQuoteDetect";
 import { fetchLiveQuote } from "@/lib/quoteService";
+import { hybridRetrieve, resolveRetrievalMode } from "@/lib/hybridRetrieve";
 import { resolveChatSystemPrompt } from "@/lib/prompts/chatSystemPrompt";
 import {
   normalizeMessageContent,
@@ -92,15 +93,37 @@ const RAG_THRESHOLD = (() => {
   return Number.isFinite(n) ? n : 0.5;
 })();
 
+/**
+ * Pure semantic search — the pre-hybrid behaviour, kept reachable via
+ * RETRIEVAL_MODE=vector as a rollback switch.
+ */
+async function vectorOnlyRetrieve(question: string): Promise<Document[]> {
+  const vectorStore = await getVectorStore();
+  const results = await vectorStore.similaritySearchWithScore(question, RAG_TOP_K);
+  return results.filter(([, score]) => score <= RAG_THRESHOLD).map(([doc]) => doc);
+}
+
+/**
+ * Note on the relevance gate: RAG_SCORE_THRESHOLD is an absolute cosine
+ * distance, whereas RRF scores are rank-derived and have no absolute meaning.
+ * The threshold is therefore applied *inside the vector lane before fusion*
+ * (see hybridRetrieve), and the post-fusion cut is by rank alone. Documents can
+ * now reach the context on a strong lexical match despite mediocre semantic
+ * distance — which is the point — and the system prompt's relevance check is
+ * what rejects context that turns out not to fit the question.
+ */
+async function retrieveDocs(question: string): Promise<Document[]> {
+  if (resolveRetrievalMode() === "vector") {
+    return vectorOnlyRetrieve(question);
+  }
+  return hybridRetrieve(question, { topK: RAG_TOP_K, threshold: RAG_THRESHOLD });
+}
+
 const retrieve = async (state: State) => {
   const liveSymbol = detectLiveQuoteSymbol(state.question);
   const liveContext = liveSymbol ? await fetchLiveQuote(liveSymbol) : null;
 
-  const vectorStore = await getVectorStore();
-  const results = await vectorStore.similaritySearchWithScore(state.question, RAG_TOP_K);
-  const relevantDocs = results
-    .filter(([, score]) => score <= RAG_THRESHOLD)
-    .map(([doc]) => doc);
+  const relevantDocs = await retrieveDocs(state.question);
 
   if (liveContext) {
     return { context: [new Document({ pageContent: liveContext }), ...relevantDocs] };

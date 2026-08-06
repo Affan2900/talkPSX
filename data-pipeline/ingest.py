@@ -166,6 +166,27 @@ def ensure_table(cur) -> None:
             "collection_id" uuid
         )
     """)
+    ensure_hybrid_search(cur)
+
+
+def ensure_hybrid_search(cur) -> None:
+    """
+    Lexical half of hybrid search (see migrations/0001_hybrid_search.sql).
+
+    `tsv` is a generated column, so Postgres maintains it on every write —
+    bulk_insert() does not need to know it exists. All statements are
+    idempotent; existing databases can also apply the migration file directly.
+    """
+    cur.execute(f"""
+        ALTER TABLE "{TABLE}"
+        ADD COLUMN IF NOT EXISTS tsv tsvector
+        GENERATED ALWAYS AS (to_tsvector('english', coalesce("text", ''))) STORED
+    """)
+    cur.execute(f'CREATE INDEX IF NOT EXISTS {TABLE}_tsv_idx ON "{TABLE}" USING GIN (tsv)')
+    cur.execute(
+        f"""CREATE INDEX IF NOT EXISTS {TABLE}_symbol_idx
+            ON "{TABLE}" ((metadata->>'symbol'))"""
+    )
 
 
 def load_existing(cur) -> dict[tuple[str, str], str]:
