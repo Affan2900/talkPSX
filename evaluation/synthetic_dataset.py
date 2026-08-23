@@ -16,7 +16,7 @@ Provider setup: see providers.py docstring or .env.local for required keys.
 
 Groq notes:
     Multi-key:  set GROQ_API_KEYS=key1,key2,key3 for automatic rate-limit rotation.
-    500K tokens/day with llama-3.1-8b-instant; 100K/day with llama-3.3-70b-versatile.
+    Free tier is 200K tokens/day per key for every gpt-oss model (30 RPM / 1K RPD / 8K TPM).
     Override model with GROQ_CHAT_MODEL in .env.local.
 
 OpenRouter notes:

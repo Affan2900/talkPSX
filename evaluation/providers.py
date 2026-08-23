@@ -176,7 +176,7 @@ def build_groq_provider() -> tuple[LangchainLLMWrapper, LangchainEmbeddingsWrapp
             "No Groq API key found. Set GROQ_API_KEY or GROQ_API_KEYS in .env.local.\n"
             "Get free keys at https://console.groq.com/keys"
         )
-    chat_model  = os.getenv("GROQ_CHAT_MODEL", "llama-3.3-70b-versatile")
+    chat_model  = os.getenv("GROQ_CHAT_MODEL", "openai/gpt-oss-120b")
     embed_model = os.getenv("HF_EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
     print(f"  LLM:        Groq / {chat_model} ({len(api_keys)} key(s))")
     print(f"  Embeddings: HuggingFace / {embed_model}")

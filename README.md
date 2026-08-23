@@ -41,7 +41,7 @@ It retrieves relevant context from a live vector store of PSX company data and g
 - **LangChain + LangGraph** for the RAG (Retrieve → Generate) pipeline, with streaming token-by-token responses
 - **Pluggable chat model** (`src/lib/chatProvider.ts`), switchable via `CHAT_PROVIDER`:
   - **Ollama** (default) — local inference, no API keys needed
-  - **Groq** — cloud inference via `@langchain/groq` for fast, hosted LLM calls (e.g. `llama-3.1-8b-instant`)
+  - **Groq** — cloud inference via `@langchain/groq` for fast, hosted LLM calls (e.g. `openai/gpt-oss-20b`)
   - **Jina AI** — hosted embeddings API
 - **Hybrid search** over the PGVector store (`src/lib/hybridRetrieve.ts`) — three lanes ranked in a single query and combined with **Reciprocal Rank Fusion**:
   - *vector* — cosine ANN over the embeddings (semantic similarity)
@@ -102,7 +102,7 @@ OLLAMA_EMBEDDING_MODEL=nomic-embed-text:latest
 # Chat provider — "ollama" (default) or "groq"
 CHAT_PROVIDER=ollama
 GROQ_API_KEY=your_groq_api_key                # required if CHAT_PROVIDER=groq
-GROQ_MODEL=llama-3.1-8b-instant               # optional, this is the default
+GROQ_MODEL=openai/gpt-oss-20b                 # optional, this is the default
 
 # Embedding provider — "ollama" (default), "jina", or "huggingface"
 EMBEDDING_PROVIDER=ollama
