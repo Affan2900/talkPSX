@@ -84,15 +84,14 @@ export default function Hero({ sidebarOpen = false }: HeroProps) {
 
     if (!query.trim()) return;
 
+    setLoading(true);
+
     if (!user) {
       // Redirect immediately — chat page handles the LLM call
       const localChatId = "local-" + crypto.randomUUID();
       router.push(`/chat/${localChatId}?q=${encodeURIComponent(query)}&new=1`);
-      setQuery("");
       return;
     }
-
-    setLoading(true);
 
     try {
       const createChatResponse = await fetch(`/api/user/${user.id}/create`, {
@@ -111,11 +110,8 @@ export default function Hero({ sidebarOpen = false }: HeroProps) {
     } catch (error) {
       toast.error("Failed to reach the server. Please try again.");
       console.error("API Error:", error);
-    } finally {
       setLoading(false);
     }
-
-    setQuery("");
   };
 
   return (

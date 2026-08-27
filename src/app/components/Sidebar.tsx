@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { PlusCircle, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
@@ -20,7 +21,7 @@ export const SIDEBAR_WIDTH_PX = 300;
 export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean; toggleSidebar: () => void }) {
   const [chats, setChats] = useState<Chat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const router = useRouter();
 
   useEffect(() => {
@@ -39,11 +40,14 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean; to
         } finally {
           setIsLoading(false);
         }
+      } else if (isLoaded) {
+        setIsLoading(false);
+        setChats([]);
       }
     };
 
     fetchChats();
-  }, [user]);
+  }, [user, isLoaded]);
 
 
   const handleNewChat = async () => {
@@ -110,23 +114,25 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean; to
               </div>
 
               <ScrollArea className="flex-1 px-3">
-                <div className="space-y-2 py-4 pl-2">
-                  {isLoading ? (
-                    <div className="text-center text-white/60">
-                      Loading chats...
-                    </div>
-                  ) : chats.length === 0 ? (
-                    <div className="text-center text-white/60">No chats yet</div>
-                  ) : (
-                    chats.map((chat) => (
+                {isLoading ? (
+                  <div className="flex h-full min-h-[350px] items-center justify-center text-center text-sm text-white/70">
+                    <Spinner className="mr-2 h-4 w-4" /> Loading chats...
+                  </div>
+                ) : chats.length === 0 ? (
+                  <div className="flex h-full min-h-[350px] items-center justify-center p-6 pt-40 text-center text-base font-medium leading-relaxed text-white/80 ">
+                    Markets never Sleep.<br/> Start a Chat Now
+                  </div>
+                ) : (
+                  <div className="space-y-2 py-4 pl-2">
+                    {chats.map((chat) => (
                       <ChatItem
                         key={chat.id}
                         chat={chat}
                         onDeleteChat={handleDeleteChat}
                       />
-                    ))
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </ScrollArea>
             </div>
           )}

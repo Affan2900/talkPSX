@@ -32,6 +32,11 @@ export default function ChatInterface({
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const autoSubmittedRef = useRef(false);
 
+  const messagesRef = useRef(messages);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
   const submitQuestion = useCallback(async (question: string) => {
     if (!question.trim()) return;
 
@@ -43,7 +48,7 @@ export default function ChatInterface({
       sender: "user",
     };
 
-    const updatedMessages = [...messages, userMessage];
+    const updatedMessages = [...messagesRef.current, userMessage];
     setMessages(updatedMessages);
 
     const aiMsgId = `${Date.now() + 1}`;
@@ -114,7 +119,6 @@ export default function ChatInterface({
       setIsLoading(false);
       setIsStreaming(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatId, isLocal, user?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
