@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/db";
 import { users } from "@/app/db/schema";
-import { eq } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, username } = await req.json();
+    const { userId, username, email } = await req.json();
 
     const usernameStr =
       typeof username === "string" ? username.trim() : String(username ?? "").trim();
+    const emailStr =
+      typeof email === "string" && email.trim() ? email.trim().toLowerCase() : null;
 
     if (!userId || !usernameStr) {
       return NextResponse.json(
@@ -19,17 +20,17 @@ export async function POST(req: NextRequest) {
 
     const db = await getDB();
 
-    // Check if the user already exists
-    const existingUser = await db.select().from(users).where(eq(users.id, userId));
+    // Idempotent sync: insert on first sight, refresh username/email on every
+    // later visit so Clerk profile changes propagate.
+    await db
+      .insert(users)
+      .values({ id: userId, username: usernameStr, email: emailStr })
+      .onConflictDoUpdate({
+        target: users.id,
+        set: { username: usernameStr, email: emailStr },
+      });
 
-    if (existingUser.length > 0) {
-      return NextResponse.json({ message: "User already exists" }, { status: 200 });
-    }
-
-    // Create a new user
-    await db.insert(users).values({ id: userId, username: usernameStr });
-
-    return NextResponse.json({ message: "User created" }, { status: 201 });
+    return NextResponse.json({ message: "User synced" }, { status: 200 });
   } catch (error) {
     console.error("Error checking/creating user:", error);
     const cause =

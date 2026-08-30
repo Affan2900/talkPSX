@@ -41,16 +41,18 @@ export default function Hero({ sidebarOpen = false }: HeroProps) {
     const checkAndCreateUser = async () => {
       try {
         const username =
+          user.username ||
           user.fullName?.trim() ||
           [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
-          user.username ||
           user.primaryEmailAddress?.emailAddress ||
           `user_${user.id.slice(0, 12)}`;
+
+        const email = user.primaryEmailAddress?.emailAddress ?? null;
 
         const response = await fetch("/api/user/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: user.id, username }),
+          body: JSON.stringify({ userId: user.id, username, email }),
         });
 
         const data = await response.json();
