@@ -15,6 +15,13 @@
       "when": 1788108452076,
       "tag": "0001_abandoned_dazzler",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788201750011,
+      "tag": "0002_great_falcon",
+      "breakpoints": true
     }
   ]
 }

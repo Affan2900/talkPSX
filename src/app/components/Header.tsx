@@ -75,7 +75,7 @@ export default function Header({ sidebarOpen = false }: HeaderProps) {
               }}
             />
           ) : (
-            <SignInButton mode="modal">
+            <SignInButton mode="redirect">
               <button
                 type="button"
                 className="rounded-full border border-white/40 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-white/10"

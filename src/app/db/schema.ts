@@ -3,7 +3,7 @@ import { pgTable, uuid, text, timestamp } from "drizzle-orm/pg-core";
 // Users Table
 export const users = pgTable("users", {
   id: text("id").primaryKey(), // Use text for Clerk's userId
-  email: text("email").unique(),
+  email: text("email"),
   username: text("username").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
