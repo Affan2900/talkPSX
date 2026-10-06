@@ -25,6 +25,42 @@ from urllib.parse import urlparse, unquote
 import pandas as pd
 import psxdata
 import requests
+
+# ---------------------------------------------------------------------------
+# Patch requests.Session to bypass basic User-Agent / bot blocking by PSX
+# ---------------------------------------------------------------------------
+_original_session_request = requests.Session.request
+
+def _custom_session_request(self, method, url, **kwargs):
+    # Strip headers that trigger Cloudflare/PSX 403 on datacenter IPs (e.g. GitHub Actions runners)
+    if hasattr(self, "headers"):
+        self.headers.pop("X-Requested-With", None)
+        self.headers.pop("x-requested-with", None)
+        self.headers["User-Agent"] = (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0.0.0 Safari/537.36"
+        )
+
+    headers = kwargs.get("headers")
+    if headers is None:
+        headers = {}
+    else:
+        headers = dict(headers)
+
+    headers.pop("X-Requested-With", None)
+    headers.pop("x-requested-with", None)
+    headers["User-Agent"] = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    )
+
+    kwargs["headers"] = headers
+    return _original_session_request(self, method, url, **kwargs)
+
+requests.Session.request = _custom_session_request
+
 import psycopg2
 import psycopg2.extras
 from dotenv import load_dotenv
@@ -306,8 +342,12 @@ def run(force: bool = False, dry_run: bool = False) -> None:
     print(f"  {len(all_symbols)} KSE-100 constituents")
 
     print("  Fetching sector summaries...")
-    sectors_df = psxdata.sectors()
-    print(f"  {len(sectors_df)} sectors")
+    try:
+        sectors_df = psxdata.sectors()
+        print(f"  {len(sectors_df)} sectors")
+    except Exception as exc:
+        print(f"  Warning: sector summaries skipped — {exc}")
+        sectors_df = pd.DataFrame()
 
     # 2. Determine what needs updating (skip freshness check on --force or --dry-run)
     stocks_to_update: list[str] = all_symbols

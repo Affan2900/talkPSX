@@ -51,7 +51,19 @@ next-env.d.ts
 __pycache__/
 *.py[cod]
 *$py.class
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# logs
+*.log
+
+# IDEs & local AI tooling
+.claude/
+.vscode/
+.idea/
 
 # evaluation
-/evaluation/.venv/
 /evaluation/*.csv
